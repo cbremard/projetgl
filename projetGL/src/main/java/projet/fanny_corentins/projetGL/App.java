@@ -12,7 +12,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
+/**
+ * 
+ * @author fanny
+ *
+ */
 public class App 
 {
     public static void main( String[] args )
