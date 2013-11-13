@@ -14,7 +14,7 @@ import org.json.JSONObject;
 
 /**
  * 
- * @author fanny
+ * @author fanny and Corentin
  *
  */
 public class App 
