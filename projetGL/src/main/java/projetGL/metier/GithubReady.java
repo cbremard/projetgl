@@ -1,4 +1,4 @@
-package projet.fanny_corentins.projetGL.metier;
+package projetGL.metier;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -12,6 +12,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import projetGL.controller.Controller;
+
 public class GithubReady extends MethodJunior implements GithubState {
 
 	public void getCommit() {
@@ -20,6 +22,11 @@ public class GithubReady extends MethodJunior implements GithubState {
 	}
 
 	public float getScore() {
+		GoogleSearch gs = GoogleSearch.getInstance();
+		String request;
+		// TODO next line
+		request = "\""+Controller.getLibrairie()+"\" \""+Controller.getNewVersion()+"\" site:github.com";
+		
 		// TODO Auto-generated method stub
 		return 0;
 	}

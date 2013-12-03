@@ -1,4 +1,4 @@
-package projet.fanny_corentins.projetGL.metier;
+package projetGL.metier;
 
 public interface Method {
 	

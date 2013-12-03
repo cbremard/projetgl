@@ -1,4 +1,4 @@
-package projet.fanny_corentins.projetGL.metier;
+package projetGL.metier;
 
 public class GithubPassive extends Api implements GithubState{
 
