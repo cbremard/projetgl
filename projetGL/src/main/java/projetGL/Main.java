@@ -2,7 +2,9 @@ package projetGL;
 
 import java.util.ArrayList;
 
-import projetGL.metier.GithubReady;
+import projetGL.metier.Github;
+import projetGL.metier.MethodJunior;
+import projetGL.metier.StateReady;
 import projetGL.metier.Method;
 
 /**
@@ -13,9 +15,11 @@ import projetGL.metier.Method;
 public class Main {
     public static void main( String[] args ){
     	System.out.print("Initiation step");
-    	int globalScore = 0;System.out.print(".");
-    	ArrayList<Method> methodes = new ArrayList();System.out.print(".");
-    	methodes.add(new GithubReady());System.out.println("done");
+    	int globalScore = 0; System.out.print(".");
+    	ArrayList<Method> methodes = new ArrayList(); System.out.print(".");
+    	Github method1 = new Github();
+    	method1.prepare();
+    	methodes.add(method1); System.out.println("done");
     	
     	System.out.print("Scores computation");
     	for (Method method : methodes) {
