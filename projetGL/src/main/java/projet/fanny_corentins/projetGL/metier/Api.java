@@ -4,6 +4,10 @@ public abstract class Api extends MethodJunior{
 	protected int resquestCounter = 0;
 	protected final int maxRequest = 5000;
 	
+	/**
+	 * 
+	 * @return int
+	 */
 	public int getResquestCounter() {
 		return resquestCounter;
 	}
