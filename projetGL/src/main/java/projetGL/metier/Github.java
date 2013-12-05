@@ -4,7 +4,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Stack;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -15,7 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import projetGL.controller.Controller;
+import projet.fanny_corentins.projetGL.metier.Controller;
 
 public class Github extends Api{
 	private static Github uniqueGithub = null;
@@ -144,7 +143,7 @@ public class Github extends Api{
 		Stack<String> urls = new Stack<String>();
 		ArrayList<String> users,repos;
 		
-		
+		 
 		// TODO Change next line
 		request = "https//www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
@@ -162,7 +161,7 @@ public class Github extends Api{
 				+ "&gws_rd=cr"
 				+ "&ei=UwyeUva_KuvY7AaK04CICg";
 		endURL = "pom.xml";
-		users = new ArrayList<String>();
+		users = new ArrayList<String>(); 
 		repos = new ArrayList<String>();
 		
 		/* Récupération des résultast d'une recherche Google */
