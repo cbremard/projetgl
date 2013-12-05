@@ -1,8 +1,11 @@
-package projet.fanny_corentins.projetGL.metier;
+package projetGL.metier;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Stack;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -12,19 +15,51 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class GithubReady extends MethodJunior implements GithubState {
+import projetGL.controller.Controller;
 
-	public void getCommit() {
-		// TODO Auto-generated method stub
+public class Github extends Api{
+	private static Github uniqueGithub = null;
 
+	public Github(float coefficient) {
+		super();
+		this.coefficient=coefficient;
 	}
-
-	public float getScore() {
-		// TODO Auto-generated method stub
-		return 0;
+	public Github() {
+		super();
 	}
 	
-	public void test(){
+	public static Github getInstance(){
+		if (uniqueGithub==null){
+			uniqueGithub = new Github();
+		}
+		return uniqueGithub;
+	}
+	
+	@Override
+	public float getScore() {
+		return state.compute(this);
+	}
+
+	@Override
+	public void getCommit() {
+		//TODO
+	}
+	
+	private String getRepo(String url) {
+		int begin, end;
+		begin = url.indexOf("/", 4);
+		end = url.indexOf("/", 5);
+		return url.substring(begin, end);
+	}
+
+	private String getUser(String url){
+		int begin, end;
+		begin = url.indexOf("/", 3);
+		end = url.indexOf("/", 4);
+		return url.substring(begin, end);
+	}
+	
+	private void test(){
 		System.out.println("Start");
 		String path = "C:/Users/pORTABLE/Desktop/json.txt";
 		/* Etape d'initialisation */
@@ -101,5 +136,59 @@ public class GithubReady extends MethodJunior implements GithubState {
 			e1.printStackTrace();
 		}
 	}
+	public float compute() {
+		/* Initiation des variables */
+		GoogleSearch gs = GoogleSearch.getInstance();
+		String request, temp, endURL;
+		int score = 0;
+		Stack<String> urls = new Stack<String>();
+		ArrayList<String> users,repos;
+		
+		
+		// TODO Change next line
+		request = "https//www.google.fr/search?client=ubuntu"
+				+ "&channel=fs"
+				+ "&q=eric+pidoux"
+				+ "&ie=utf-8"
+				+ "&oe=utf-8"
+				+ "&gws_rd=cr"
+				+ "&ei=_GlqUsniL4OEhQerl4CQDQ#channel=fs"
+				+ "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com";
+		request = "https://www.google.fr/search?client=ubuntu"
+				+ "&channel=fs"
+				+ "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com"
+				+ "&ie=utf-8"
+				+ "&oe=utf-8"
+				+ "&gws_rd=cr"
+				+ "&ei=UwyeUva_KuvY7AaK04CICg";
+		endURL = "pom.xml";
+		users = new ArrayList<String>();
+		repos = new ArrayList<String>();
+		
+		/* Récupération des résultast d'une recherche Google */
+		urls = gs.getUrlResult(request);
+		
+		writeText(urls.firstElement(), "/home/corentin/Bureau/googleResult2.text", true);
+		
+		/* Filtrages des résultats obtenus */
+		/*
+		 for (Iterator<String> iterator = urls.iterator(); iterator.hasNext();) {
 
+			temp = iterator.next();
+			if(temp.substring(temp.length()-endURL.length()) == endURL){
+				users.add(getUser(temp));
+				repos.add(getRepo(temp));
+System.out.println(temp);
+System.out.println("  "+getUser(temp)+"      "+getRepo(temp));
+			}
+		}
+		 */
+		
+		/* Récupération des commits */
+		
+		// TODO finish this procedure
+		return score;
+	}
+
+	
 }
