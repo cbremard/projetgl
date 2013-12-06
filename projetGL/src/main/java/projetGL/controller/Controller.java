@@ -18,7 +18,7 @@ public class Controller {
 		System.out.print(".");System.out.print(".");
 
 		// Initialisation de la méthode Github
-		Github method_git = new Github();
+		Github method_git = Github.getInstance();
 		method_git.setCoeff(1);
 		list_method.add(method_git);
 		System.out.println("done");
