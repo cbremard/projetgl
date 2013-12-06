@@ -9,7 +9,7 @@ import projetGL.metier.Method;
 
 /**
  * 
- * @author fanny and Corentin
+ * @author fanny and Corentins
  *
  */
 public class Main {
