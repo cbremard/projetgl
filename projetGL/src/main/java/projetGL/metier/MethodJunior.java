@@ -17,7 +17,7 @@ public abstract class MethodJunior implements Method{
 		this.coefficient = coefficient;
 	}
 	public void prepare() {
-		this.state = new StateReady();
+		this.state = new StateReady(this);
 	}
 	
 	abstract public float getScore();

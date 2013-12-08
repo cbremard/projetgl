@@ -3,6 +3,6 @@ package projetGL.metier;
 
 public interface State {
 
-	float compute(Method method);
+	public float compute(Method method) throws Exception;
 
 }
