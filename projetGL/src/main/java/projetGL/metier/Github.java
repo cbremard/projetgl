@@ -4,7 +4,9 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Stack;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -13,16 +15,17 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import projetGL.controller.Controller;
 
 public class Github extends Api{
 	private static Github uniqueGithub = null;
+	float coeff;
 
-	public Github(float coefficient) {
-		super();
-		this.coefficient=coefficient;
-	}
 	public Github() {
 		super();
 	}
@@ -44,20 +47,22 @@ public class Github extends Api{
 		//TODO
 	}
 	
-	private String getRepo(String url) {
+
+	private String getUser(String url) {
 		int begin, end;
-		begin = url.indexOf("/", 4);
-		end = url.indexOf("/", 5);
+		String refText="https://github.com/";
+		begin = url.indexOf(refText) + refText.length();
+		end = begin + url.substring(begin).indexOf("/");
+		return url.substring(begin, end);
+	}
+	private String getRepo(String url, String user) {
+		int begin, end;
+		String refText="https://github.com/" + user + "/";
+		begin = url.indexOf(refText) + refText.length();
+		end = begin + url.substring(begin).indexOf("/");
 		return url.substring(begin, end);
 	}
 
-	private String getUser(String url){
-		int begin, end;
-		begin = url.indexOf("/", 3);
-		end = url.indexOf("/", 4);
-		return url.substring(begin, end);
-	}
-	
 	private void test(){
 		System.out.println("Start");
 		String path = "C:/Users/pORTABLE/Desktop/json.txt";
@@ -135,24 +140,22 @@ public class Github extends Api{
 			e1.printStackTrace();
 		}
 	}
+    
+    
+    
+    
+    
+    
 	public float compute() {
 		/* Initiation des variables */
-		GoogleSearch gs = GoogleSearch.getInstance();
-		String request, temp, endURL;
+		String request, linkHref, endURL, temp;
+		ArrayList<String> users = new ArrayList<String>();
+		ArrayList<String> repos = new ArrayList<String>();
 		int score = 0;
-		Stack<String> urls = new Stack<String>();
-		ArrayList<String> users,repos;
-		
-		 
+		Document doc ;
+		Elements links;
+//		request = "https//www.google.fr/search?client=ubuntu" + "&channel=fs" + "&q=eric+pidoux" + "&ie=utf-8" + "&oe=utf-8" + "&gws_rd=cr" + "&ei=_GlqUsniL4OEhQerl4CQDQ#channel=fs" + "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com";
 		// TODO Change next line
-		request = "https//www.google.fr/search?client=ubuntu"
-				+ "&channel=fs"
-				+ "&q=eric+pidoux"
-				+ "&ie=utf-8"
-				+ "&oe=utf-8"
-				+ "&gws_rd=cr"
-				+ "&ei=_GlqUsniL4OEhQerl4CQDQ#channel=fs"
-				+ "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com";
 		request = "https://www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
 				+ "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com"
@@ -161,15 +164,33 @@ public class Github extends Api{
 				+ "&gws_rd=cr"
 				+ "&ei=UwyeUva_KuvY7AaK04CICg";
 		endURL = "pom.xml";
-		users = new ArrayList<String>(); 
-		repos = new ArrayList<String>();
 		
-		/* Récupération des résultast d'une recherche Google */
-		urls = gs.getUrlResult(request);
+		/* Récupération des résultats d'une recherche Google */
+//		urls = gs.getUrlResult(request);
+		try {
+			doc = Jsoup.connect(request).userAgent("Firefox").get();
+			writeText(doc.toString(), "/home/corentin/Bureau/googleResultFromJsoup1.text", true);
+			/* Filtrages des résultats obtenus : Récupération de tout les <a href="..."> </a>, Sélection des lien contenant "pom.xml" et Extraction des users et repositories*/
+			links = doc.getElementsByTag("a");
+			for (Element link : links) {
+				linkHref = link.attr("href");
+				writeText(linkHref, "/home/corentin/Bureau/googleResultFromJsoup2.text", false);
+				if(linkHref.contains(endURL)){
+					temp = getUser(linkHref);
+					users.add(temp);
+					repos.add(getRepo(linkHref,temp));
+				}
+			}
+			writeText("Résultats :", "/home/corentin/Bureau/googleResultFromJsoup2.text", false);
+			for (int i = 0; i < users.size(); i++) {
+				writeText("User = "+users.get(i)+" and repository = "+repos.get(i), "/home/corentin/Bureau/googleResultFromJsoup2.text", false);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		writeText(urls.firstElement(), "/home/corentin/Bureau/googleResult2.text", true);
 		
-		/* Filtrages des résultats obtenus */
 		/*
 		 for (Iterator<String> iterator = urls.iterator(); iterator.hasNext();) {
 
@@ -180,14 +201,16 @@ public class Github extends Api{
 System.out.println(temp);
 System.out.println("  "+getUser(temp)+"      "+getRepo(temp));
 			}
-		}
-		 */
+			
+		}*/
+		
 		
 		/* Récupération des commits */
 		
 		// TODO finish this procedure
 		return score;
 	}
+
 
 	
 }
