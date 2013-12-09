@@ -69,8 +69,12 @@ public class Github extends Api{
 		ArrayList<String> urls = new ArrayList<String>();
 		ArrayList<String> users = new ArrayList<String>();
 		ArrayList<String> repos = new ArrayList<String>();
-		int index, score=0;
+		ArrayList<JSONObject> jsons = new ArrayList<JSONObject>();
+		int index, statusCode, score=0;
 		GoogleSearch gs = new GoogleSearch();
+		HttpClient client = new HttpClient();
+		GetMethod gmethod;
+		
 //		request = "https//www.google.fr/search?client=ubuntu" + "&channel=fs" + "&q=eric+pidoux" + "&ie=utf-8" + "&oe=utf-8" + "&gws_rd=cr" + "&ei=_GlqUsniL4OEhQerl4CQDQ#channel=fs" + "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com";
 		// TODO Change next line
 		request = "https://www.google.fr/search?client=ubuntu"
@@ -90,7 +94,7 @@ public class Github extends Api{
 				repos.add(getRepo(url,temp));
 		}
 		/* Suppression des doublons */
-//for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(index)+" and repository = "+repos.get(index));}
+for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i)+" and repository = "+repos.get(i));}
 		index=1;
 		while(index < users.size()) {
 			if(users.get(index-1)==users.get(index) && repos.get(index-1)==repos.get(index)){
@@ -100,11 +104,34 @@ public class Github extends Api{
 				index++;
 			}
 		}
-//System.out.println("Now:");
-//for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(index)+" and repository = "+repos.get(index));}
+System.out.println("Now:");
+for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i)+" and repository = "+repos.get(i));}
 		
 		
 		/* Récupération des commits */
+		for (int i = 0; i < users.size(); i++) {
+			gmethod = new GetMethod("https://api.github.com/repos/"+users.get(i)+"/"+repos.get(i)+"/events");
+			gmethod.addRequestHeader("Accept", "application/vnd.github.preview");
+			try {
+				statusCode = client.executeMethod(gmethod);
+				if (statusCode != HttpStatus.SC_OK) {
+					System.err.println("Unexpected result with "+users.get(i)+"'s repository ("+repos.get(i)+") :");
+					System.err.println(gmethod.getStatusText());
+					System.err.println(gmethod.getResponseBodyAsString());
+				}else{
+					jsons.add(new JSONObject(gmethod.getResponseBodyAsString()));
+				}
+			} catch (HttpException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		
 		
 		return score;
