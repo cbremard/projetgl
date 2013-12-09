@@ -4,9 +4,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -39,7 +36,14 @@ public class Github extends Api{
 	
 	@Override
 	public float getScore() {
-		return state.compute(this);
+		float result = -1;
+		try {
+			result = state.compute(this);
+		} catch (Exception e) {
+			e.getMessage();
+			System.err.println("The score will have a value of -1.");
+		}
+		return result;
 	}
 
 	@Override
@@ -151,8 +155,8 @@ public class Github extends Api{
 		String request, linkHref, endURL, temp;
 		ArrayList<String> users = new ArrayList<String>();
 		ArrayList<String> repos = new ArrayList<String>();
-		int score = 0;
-		Document doc ;
+		int score=0, nbPages=1;
+		Document doc;
 		Elements links;
 //		request = "https//www.google.fr/search?client=ubuntu" + "&channel=fs" + "&q=eric+pidoux" + "&ie=utf-8" + "&oe=utf-8" + "&gws_rd=cr" + "&ei=_GlqUsniL4OEhQerl4CQDQ#channel=fs" + "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com";
 		// TODO Change next line
@@ -169,19 +173,20 @@ public class Github extends Api{
 //		urls = gs.getUrlResult(request);
 		try {
 			doc = Jsoup.connect(request).userAgent("Firefox").get();
-			writeText(doc.toString(), "/home/corentin/Bureau/googleResultFromJsoup1.text", true);
+			nbPages= (int) (0.1*toInt(doc.getElementById("resultStats").text()));
+			writeText(doc.toString(), "/home/corentin/Bureau/googleResultFromJsoup.text", true);
 			/* Filtrages des résultats obtenus : Récupération de tout les <a href="..."> </a>, Sélection des lien contenant "pom.xml" et Extraction des users et repositories*/
 			links = doc.getElementsByTag("a");
 			for (Element link : links) {
 				linkHref = link.attr("href");
-				writeText(linkHref, "/home/corentin/Bureau/googleResultFromJsoup2.text", false);
+				writeText(linkHref, "/home/corentin/Bureau/googleResultFromJsoup.text", false);
 				if(linkHref.contains(endURL)){
 					temp = getUser(linkHref);
 					users.add(temp);
 					repos.add(getRepo(linkHref,temp));
 				}
 			}
-			writeText("Résultats :", "/home/corentin/Bureau/googleResultFromJsoup2.text", false);
+			writeText("Résultats :", "/home/corentin/Bureau/googleResultFromJsoup.text", false);
 			for (int i = 0; i < users.size(); i++) {
 				writeText("User = "+users.get(i)+" and repository = "+repos.get(i), "/home/corentin/Bureau/googleResultFromJsoup2.text", false);
 			}
@@ -209,6 +214,12 @@ System.out.println("  "+getUser(temp)+"      "+getRepo(temp));
 		
 		// TODO finish this procedure
 		return score;
+	}
+
+	private int toInt(String text) {
+		System.out.println(text);
+		
+		return 0;
 	}
 
 
