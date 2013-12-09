@@ -36,7 +36,7 @@ public class Controller {
 
 		System.out.println("Scores computation in Controller");
 		for (Method method : list_method) {
-			System.out.println(method.getCoeff());
+			System.out.println("New method create with a coef = "+method.getCoeff());
 			globalScore += method.getCoeff()*method.getScore();System.out.print(".");
 		}
 		System.out.println("done");
