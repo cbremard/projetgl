@@ -45,12 +45,12 @@ public class Controller {
 
 	public static String getLibrairie() {
 		// TODO Auto-generated method stub
-		return "fr.ensai";
+		return "junit";
 	}
 
 	public static String getNewVersion() {
 		// TODO Auto-generated method stub
-		return "test8";
+		return "3.8.1";
 	}
 
 }

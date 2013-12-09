@@ -2,13 +2,11 @@ package projetGL.metier;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import projetGL.controller.Controller;
 
 public class GoogleSearch extends MethodJunior{
 	private static GoogleSearch uniqueGoogle = null;
@@ -25,6 +23,13 @@ public class GoogleSearch extends MethodJunior{
 		int NbResult=0;
 		text = doc.getElementById("resultStats").text();
 		System.out.println(text);
+		
+		//TODO analyse de texte avec blancs
+		StringTokenizer s = new StringTokenizer(text, " \t\n\r\f");
+		while (s.hasMoreTokens()) {
+		   System.out.println(s.nextToken());
+		}
+		
 		//TODO Completer cette méthode pour récupérer le nombre de résultats présent dans text qui peut prendre les valeurs "Environ 1 987 000 résultats" ou "56 r&amp;sultats" ou etc.
 		return NbResult;
 	}
