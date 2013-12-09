@@ -69,7 +69,7 @@ public class Github extends Api{
 		ArrayList<String> urls = new ArrayList<String>();
 		ArrayList<String> users = new ArrayList<String>();
 		ArrayList<String> repos = new ArrayList<String>();
-		int score=0;
+		int index, score=0;
 		GoogleSearch gs = new GoogleSearch();
 //		request = "https//www.google.fr/search?client=ubuntu" + "&channel=fs" + "&q=eric+pidoux" + "&ie=utf-8" + "&oe=utf-8" + "&gws_rd=cr" + "&ei=_GlqUsniL4OEhQerl4CQDQ#channel=fs" + "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com";
 		// TODO Change next line
@@ -83,48 +83,34 @@ public class Github extends Api{
 		endURL = "pom.xml";
 		
 		/* Récupération des résultats d'une recherche Google */
-		//TODO urls = gs.getUrlResult(request,endURL);
-		urls = gs.getUrlResult(request);
-		/* Filtarge des URLs */
+		urls = gs.getUrlResult(request,endURL);
 		for (String url : urls) {
-			if(url.contains(endURL)){
 				temp = getUser(url);
 				users.add(temp);
 				repos.add(getRepo(url,temp));
+		}
+		/* Suppression des doublons */
+//for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(index)+" and repository = "+repos.get(index));}
+		index=1;
+		while(index < users.size()) {
+			if(users.get(index-1)==users.get(index) && repos.get(index-1)==repos.get(index)){
+				users.remove(index);
+				repos.remove(index);
+			}else{
+				index++;
 			}
 		}
-		for (int i = 0; i < users.size(); i++) {
-			System.out.println("User = "+users.get(i)+" and repository = "+repos.get(i));
-		}
-		/*
-		
-		/*
-		 for (Iterator<String> iterator = urls.iterator(); iterator.hasNext();) {
-
-			temp = iterator.next();
-			if(temp.substring(temp.length()-endURL.length()) == endURL){
-				users.add(getUser(temp));
-				repos.add(getRepo(temp));
-System.out.println(temp);
-System.out.println("  "+getUser(temp)+"      "+getRepo(temp));
-			}
-			
-		}*/
+//System.out.println("Now:");
+//for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(index)+" and repository = "+repos.get(index));}
 		
 		
 		/* Récupération des commits */
 		
-		// TODO finish this procedure
+		
 		return score;
 	}
 
-	private int toInt(String text) {
-		System.out.println(text);
-		
-		return 0;
-	}
-
-
+//	https://api.github.com/repos/user/repository/events
 	
 }
 
