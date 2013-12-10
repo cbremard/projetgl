@@ -3,9 +3,11 @@ package projetGL.metier;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.swing.text.Element;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class GoogleSearch extends MethodJunior{
@@ -60,26 +62,35 @@ public class GoogleSearch extends MethodJunior{
 		Document doc;
 		Elements links;
 		try {
+			HttpsURLConnection.setDefaultHostnameVerifier(new NullHostnameVerifier());
 			doc = Jsoup.connect(request).userAgent("Firefox").get();
 			nbPages = Math.ceil(0.1*getNbResult(doc));
 			nbPages = 1;
 			System.out.println(nbPages + " pages");
-			/*for (double i = 0; i < nbPages; i++) {
+			for (double i = 0; i < nbPages; i++) {
 				if(i>0){
 					System.out.println(i);
 					doc = Jsoup.connect(request+"&start="+10*i).userAgent("Firefox").get();
 				}
 				links = doc.getElementsByTag("a");
-				for (Element link : links) {
+				for (org.jsoup.nodes.Element link : links) {
 					linkHref = link.attr("href");
+					System.out.println(linkHref);
 					if(linkHref.contains(keyword)){
+						// TODO fonctionne pas avec le keyword "pom.xml" aucun résultat trouvé
+						System.out.println("dans keywords");
+						
 						urls.add(linkHref);
 					}
 				}
-			}*/
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+		System.out.println("urls");
+		for (String url : urls){
+			System.out.println(url);
 		}
 		return urls;
 	}
