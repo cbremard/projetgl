@@ -2,10 +2,10 @@ package projetGL.metier;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class GoogleSearch extends MethodJunior{
@@ -17,26 +17,42 @@ public class GoogleSearch extends MethodJunior{
 		}
 		return uniqueGoogle;
 	}
-	
+	/**
+	 * Permet, grâce à l'analyse de la page HTML renvoyée pour une requête Google,
+	 * de trouver le nombre de résultats pour cette même requête.
+	 * @param doc : le document HTML à analyser.
+	 * @return le nombre de résultats renvoyés pour une requête Google définie
+	 */
 	public int getNbResult(Document doc){
 		String text;
 		int NbResult=0;
-		text = doc.getElementById("resultStats").text();
-		System.out.println(text);
+		text = doc.getElementById("resultStats").text(); // le document doit contenir un ID "resultStats"
+		//System.out.println(text);
 		
-		//TODO analyse de texte avec blancs
-		StringTokenizer s = new StringTokenizer(text, " \t\n\r\f");
-		while (s.hasMoreTokens()) {
-		   System.out.println(s.nextToken());
+		// Spliter la chaîne de caractères obtenue pour en extraire le nombre de résultats
+		String[] words;
+		String nombre = "";
+		words = text.split("");
+		for (String a : words){
+			if (a.matches("[0-9]")){
+				nombre += a;
+			}
 		}
 		
-		//TODO Completer cette méthode pour récupérer le nombre de résultats présent dans text qui peut prendre les valeurs "Environ 1 987 000 résultats" ou "56 r&amp;sultats" ou etc.
+		NbResult = Integer.parseInt(nombre);
+		System.out.println(NbResult);
+		
 		return NbResult;
 	}
 	
 	
 	
-	
+	/**
+	 * 
+	 * @param request : requête Google
+	 * @param keyword : mot clé qui détermine quelles urls nous intéressent
+	 * @return
+	 */
 	public ArrayList<String> getUrlResult(String request, String keyword){
 		ArrayList<String> urls = new ArrayList<String>();
 		String linkHref;
@@ -46,9 +62,11 @@ public class GoogleSearch extends MethodJunior{
 		try {
 			doc = Jsoup.connect(request).userAgent("Firefox").get();
 			nbPages = Math.ceil(0.1*getNbResult(doc));
-			
+			nbPages = 1;
+			System.out.println(nbPages + " pages");
 			/*for (double i = 0; i < nbPages; i++) {
 				if(i>0){
+					System.out.println(i);
 					doc = Jsoup.connect(request+"&start="+10*i).userAgent("Firefox").get();
 				}
 				links = doc.getElementsByTag("a");

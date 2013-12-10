@@ -1,5 +1,7 @@
 package projetGL;
 
+import javax.net.ssl.HttpsURLConnection;
+
 import projetGL.controller.Controller;
 
 
@@ -14,7 +16,6 @@ public class Main {
     	Controller c = new Controller();
     	c.init();
     	c.run();
-    	
     	
     }
 }
