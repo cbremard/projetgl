@@ -1,5 +1,7 @@
 package projetGL.metier;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -79,14 +81,22 @@ public class Github extends Api{
 				
 				/* Start at 1 because the newer commit (index==0) have the new librarie */
 				for (int i = 0+1; i < jsonTemp2.length(); i++) {
-					temporaryStr ="https://raw.github.com/";
-					temporaryStr += user+"/";
-					temporaryStr += repository+"/";
-					temporaryStr += jsonTemp2.getJSONObject(i).getString("head")+"/";
-					temporaryStr += repository+"/pom.xml";
-					gmethod.setURI(new URI(temporaryStr));
-					
-//					https://raw.github.com/cbremard/projetgl/74fd9dfbc9d3268d02634a3efd87efc285a704ce/projetGL/pom.xml
+					temporaryStr ="https://raw.github.com/"
+						+ user+"/"
+						+ repository+"/"
+						+ jsonTemp2.getJSONObject(i).getString("head")+"/"
+						+ repository+"/pom.xml";
+					gmethod = new GetMethod(temporaryStr);
+					statusCode = client.executeMethod(gmethod);
+					if (statusCode != HttpStatus.SC_OK) {
+						System.err.println("Unexpected result with URL "+temporaryStr);
+						System.err.println(gmethod.getStatusText());
+						System.err.println(gmethod.getResponseBodyAsString());
+					}else{
+						temporaryStr = gmethod.getResponseBodyAsString();
+						temporaryStr.replaceAll(" ", "");
+writeText(temporaryStr, "/home/corentin/Bureau/ProjetGLTets/pom_"+jsonTemp2.getJSONObject(i).getString("head")+".txt", true);
+					}
 				}
 			}
 		} catch (HttpException e) {
@@ -151,7 +161,7 @@ public class Github extends Api{
 		users.add("cbremard");
 		repos.add("projetGL");
 		/* Suppression des doublons */
-for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i)+" and repository = "+repos.get(i));}
+//for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i)+" and repository = "+repos.get(i));}
 		index=1;
 		while(index < users.size()) {
 			if(users.get(index-1)==users.get(index) && repos.get(index-1)==repos.get(index)){
@@ -161,8 +171,8 @@ for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i
 				index++;
 			}
 		}
-System.out.println("Now:");
-for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i)+" and repository = "+repos.get(i));}
+//System.out.println("Now:");
+//for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i)+" and repository = "+repos.get(i));}
 		
 		
 		/* Récupération des commits */
@@ -175,6 +185,20 @@ for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i
 	}
 
 //	https://api.github.com/repos/user/repository/events
+	
+private void writeText(String text, String path, boolean overwrite){
+	 BufferedWriter bw;
+		FileWriter fw;
+		try {
+			fw = new FileWriter(path, !overwrite);
+			bw  = new BufferedWriter(fw);
+			bw.write(text + "\n");
+			bw.close(); 
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+
 	
 }
 
@@ -244,16 +268,4 @@ private void test(){
 	System.out.println("End");
 }
 */
-/*
- BufferedWriter bw;
-	FileWriter fw;
-	try {
-		fw = new FileWriter(path, !overwrite);
-		bw  = new BufferedWriter(fw);
-		bw.write(text + "\n");
-		bw.close(); 
-	} catch (IOException e1) {
-		e1.printStackTrace();
-	}
-}
-*/
+
