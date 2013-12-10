@@ -1,5 +1,7 @@
 package projetGL.metier;
 
+import org.json.JSONObject;
+
 public abstract class Api extends MethodJunior{
 	protected int resquestCounter = 0;
 	protected final int maxRequest = 5000;
@@ -14,5 +16,5 @@ public abstract class Api extends MethodJunior{
 		return maxRequest;
 	}
 	
-	abstract public void getCommit();
+	abstract public JSONObject getCommit(String user, String repository);
 }

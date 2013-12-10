@@ -1,13 +1,12 @@
 package projetGL.metier;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,6 +16,7 @@ import projetGL.controller.Controller;
 
 public class Github extends Api{
 	private static Github uniqueGithub = null;
+	private static final int nbOfSavedCommit = 3;
 	float coeff;
 
 	public Github() {
@@ -43,8 +43,63 @@ public class Github extends Api{
 	}
 
 	@Override
-	public void getCommit() {
-		//TODO
+	public JSONObject getCommit(String user, String repository) {
+		JSONObject jsonsResult = null;
+		JSONArray jsonTemp1 = new JSONArray();
+		JSONArray jsonTemp2 = new JSONArray();
+		int statusCode;
+		String temporaryStr;
+		HttpClient client = new HttpClient();
+		GetMethod gmethod;
+		
+//		https://api.github.com/repos/cbremard/projetGL/events
+		gmethod = new GetMethod("https://api.github.com/repos/"+user+"/"+repository+"/events");
+		try {
+			jsonsResult = new JSONObject("{}");
+			jsonTemp1 = new JSONArray("[{}]");
+			jsonTemp2 = new JSONArray();
+			statusCode = client.executeMethod(gmethod);
+			if (statusCode != HttpStatus.SC_OK) {
+				System.err.println("Unexpected result with "+user+"'s repository ("+repository+") :");
+				System.err.println(gmethod.getStatusText());
+				System.err.println(gmethod.getResponseBodyAsString());
+			}else{
+				temporaryStr = gmethod.getResponseBodyAsString();
+				jsonTemp1 = new JSONArray(temporaryStr);
+				for (int i = 0; i < jsonTemp1.length(); i++) {
+					if(jsonTemp1.getJSONObject(i).getString("type").equals("PushEvent")){
+						temporaryStr = "{";
+						temporaryStr += "\"head\":\"" + jsonTemp1.getJSONObject(i).getJSONObject("payload").getString("head") +"\",";
+						temporaryStr += "\"before\":\"" + jsonTemp1.getJSONObject(i).getJSONObject("payload").getString("before") +"\"}";
+						jsonTemp2.put(new JSONObject(temporaryStr));
+					}
+				}
+				/* The commit jsonTemp2.getJSONObject(i) is after the commit jsonTemp2.getJSONObject(i+1) */
+				/* So jsonTemp2.getJSONObject(i).getString("before") == jsonTemp2.getJSONObject(i+1).getString("head") */
+				
+				/* Start at 1 because the newer commit (index==0) have the new librarie */
+				for (int i = 0+1; i < jsonTemp2.length(); i++) {
+					temporaryStr ="https://raw.github.com/";
+					temporaryStr += user+"/";
+					temporaryStr += repository+"/";
+					temporaryStr += jsonTemp2.getJSONObject(i).getString("head")+"/";
+					temporaryStr += repository+"/pom.xml";
+					gmethod.setURI(new URI(temporaryStr));
+					
+//					https://raw.github.com/cbremard/projetgl/74fd9dfbc9d3268d02634a3efd87efc285a704ce/projetGL/pom.xml
+				}
+			}
+		} catch (HttpException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return jsonsResult;
+	
 	}
 	
 
@@ -69,11 +124,10 @@ public class Github extends Api{
 		ArrayList<String> urls = new ArrayList<String>();
 		ArrayList<String> users = new ArrayList<String>();
 		ArrayList<String> repos = new ArrayList<String>();
-		ArrayList<JSONObject> jsons = new ArrayList<JSONObject>();
-		int index, statusCode, score=0;
+		JSONArray commits = new JSONArray();
+		int index, score=0;
 		GoogleSearch gs = new GoogleSearch();
-		HttpClient client = new HttpClient();
-		GetMethod gmethod;
+
 		
 //		request = "https//www.google.fr/search?client=ubuntu" + "&channel=fs" + "&q=eric+pidoux" + "&ie=utf-8" + "&oe=utf-8" + "&gws_rd=cr" + "&ei=_GlqUsniL4OEhQerl4CQDQ#channel=fs" + "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com";
 		// TODO Change next line
@@ -87,12 +141,15 @@ public class Github extends Api{
 		endURL = "pom.xml";
 		
 		/* Récupération des résultats d'une recherche Google */
-		urls = gs.getUrlResult(request,endURL);
-		for (String url : urls) {
-				temp = getUser(url);
-				users.add(temp);
-				repos.add(getRepo(url,temp));
-		}
+//		urls = gs.getUrlResult(request,endURL);
+//		for (String url : urls) {
+//				temp = getUser(url);
+//				users.add(temp);
+//				repos.add(getRepo(url,temp));
+//		}
+
+		users.add("cbremard");
+		repos.add("projetGL");
 		/* Suppression des doublons */
 for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i)+" and repository = "+repos.get(i));}
 		index=1;
@@ -110,27 +167,7 @@ for (int i = 0; i < users.size(); i++) {System.out.println("User = "+users.get(i
 		
 		/* Récupération des commits */
 		for (int i = 0; i < users.size(); i++) {
-			gmethod = new GetMethod("https://api.github.com/repos/"+users.get(i)+"/"+repos.get(i)+"/events");
-			gmethod.addRequestHeader("Accept", "application/vnd.github.preview");
-			try {
-				statusCode = client.executeMethod(gmethod);
-				if (statusCode != HttpStatus.SC_OK) {
-					System.err.println("Unexpected result with "+users.get(i)+"'s repository ("+repos.get(i)+") :");
-					System.err.println(gmethod.getStatusText());
-					System.err.println(gmethod.getResponseBodyAsString());
-				}else{
-					jsons.add(new JSONObject(gmethod.getResponseBodyAsString()));
-				}
-			} catch (HttpException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			commits.put(getCommit(users.get(i), repos.get(i)));
 		}
 		
 		
