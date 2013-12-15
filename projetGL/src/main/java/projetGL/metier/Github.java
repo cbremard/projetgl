@@ -14,8 +14,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import progetGL.exceptions.InvalideGithubUrlException;
+import progetGL.exceptions.InvalideMethodUrlException;
 import progetGL.exceptions.MaxRequestException;
+import progetGL.exceptions.OldVersionNotFoundException;
 import projetGL.controller.Controller;
 
 public class Github extends Api{
@@ -57,8 +58,13 @@ public class Github extends Api{
 		try {
 			result = state.compute(this);
 		} catch (Exception e) {
-			e.getMessage();
-			System.err.println("The score will have a value of 0.");
+			System.out.println(e.getMessage());
+			System.out.println("The score will have a value of 0.");
+		}
+		if(score>0){
+			state = new StateSuccess();
+		}else{
+			state = new StateFailure();
 		}
 		return result;
 	}
@@ -71,16 +77,18 @@ public class Github extends Api{
 	 *    III. Sélection des nbOfSavedCommit commits suivant le changement de version
 	 * @author BREMARD Corentin
 	 * @return Un JSON vide si le project en question n'a pas effectuer le changement de version désiré. Sinon, la méthode retourne un Json avec les paramètres "user" (le propriétaire du projet), "repo" (le répertoire du projet), "commitAt_t-1" (numéro SHA du project juste avant le changement de version), "commitAt_t0" (numéro SHA du project lors du changement de version) et les "comitAt_ti" (les numéros SHA du project aux instants t+i suivant le changement dez version.
+	 * @throws OldVersionNotFoundException 
 	 */
 	@Override
-	protected JSONObject getCommit(String user, String repository) {
-		JSONObject jsonsResult = null;
+	protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException {
+		JSONObject jsonsResult = new JSONObject();
 		JSONArray jsonTemp1 = new JSONArray();
 		JSONArray jsonTemp2 = new JSONArray();
-		String temporaryStr="";
+		String temporaryStr = "";
+		boolean oldVersionFound = false;
 		/* I. Récupération de tous les événnements liés au répertoire donné */
 		try {
-			temporaryStr = getJSONstring("https://api.github.com/repos/"+user+"/"+repository+"/events");
+			temporaryStr = sendRequest("https://api.github.com/repos/"+user+"/"+repository+"/events");
 			jsonTemp1 = new JSONArray(temporaryStr);
 		} catch (JSONException e) {
 			System.err.println("JSONArray parsing error : " + temporaryStr);
@@ -114,9 +122,10 @@ public class Github extends Api{
 						+ repository+"/"
 						+ jsonTemp2.getJSONObject(i).getString("head")+"/"
 						+ repository+"/pom.xml";
-				temporaryStr = getJSONstring(temporaryStr);
+				temporaryStr = sendRequest(temporaryStr);
 				temporaryStr.replaceAll(" ", "");
 				if(temporaryStr.contains(Controller.getOldVersion()) && temporaryStr.contains(Controller.getLibrairie())){
+					oldVersionFound = true;
 					temporaryStr = "{\"commitAt_t"+-1+"\":\""+jsonTemp2.getJSONObject(i).getString("before")+"\"";
 					temporaryStr += ",\"commitAt_t"+0+"\":\""+jsonTemp2.getJSONObject(i).getString("head")+"\"";
 					for (int j = 1; j < nbOfSavedCommit; j++) {
@@ -139,36 +148,8 @@ public class Github extends Api{
 				System.err.println(e.getMessage());
 			}
 		}
-		return jsonsResult;
-	}
-
-	/**
-	 * Gères les requêtes lancées sur les APIs de Github et incrément le compteur de requête.
-	 * @author BREMARD Corentin
-	 * @param url: l'url à soumettre
-	 * @return le Json renvoyé par les API de Github si tout ce passe bien. Lève une exception sinon.
-	 * @throws InvalideGithubUrlException 
-	 * @throws IOException 
-	 * @throws HttpException 
-	 * @throws MaxRequestException 
-	 */
-	private String getJSONstring(String url) throws InvalideGithubUrlException, HttpException, IOException, MaxRequestException {
-		int statusCode;
-		HttpClient client = new HttpClient();
-		GetMethod gmethod;
-		String jsonsResult = "{}";
-		if(resquestCounter<maxRequest){
-			gmethod = new GetMethod(url);
-			statusCode = client.executeMethod(gmethod);
-			resquestCounter++;
-			if (statusCode != HttpStatus.SC_OK) {
-				System.err.print("Unexpected result with URL "+url+" : ");
-				throw new InvalideGithubUrlException(gmethod.getStatusText());
-			}else{
-				jsonsResult = gmethod.getResponseBodyAsString();
-			}
-		}else{
-			throw new MaxRequestException("You reached the maximum of request on Github's API");
+		if(!oldVersionFound){
+			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") don't use the old version.");
 		}
 		return jsonsResult;
 	}
@@ -178,20 +159,20 @@ public class Github extends Api{
 	 * @author BREMARD Corentin
 	 * @param url: l'URL à analyser
 	 * @return Le speudo de l'utilisateur recherché si l'URL est correcte. Lève une erreur sinon.
-	 * @throws InvalideGithubUrlException 
+	 * @throws InvalideMethodUrlException 
 	 */
-	private String getUser(String url) throws InvalideGithubUrlException {
+	private String getUser(String url) throws InvalideMethodUrlException {
 		//TODO test bad urls
 		int begin, end;
 		String refText="https://github.com/";
 		begin = url.indexOf(refText);
 		if(begin<0){
-			throw new InvalideGithubUrlException("Impossible to extract an user from "+url);
+			throw new InvalideMethodUrlException("Impossible to extract an user from "+url);
 		}else{
 			begin += refText.length();
 			end = url.substring(begin).indexOf("/");
 			if (end<0){
-				throw new InvalideGithubUrlException("Impossible to extract an user from "+url);
+				throw new InvalideMethodUrlException("Impossible to extract an user from "+url);
 			}else{
 				end += begin;
 			}
@@ -204,19 +185,19 @@ public class Github extends Api{
 	 * @author BREMARD Corentin
 	 * @param url: l'URL à analyser
 	 * @return Le nom du répertoire de l'utilisateur recherché si l'URL est correcte. Lève une erreur sinon.
-	 * @throws InvalideGithubUrlException 
+	 * @throws InvalideMethodUrlException 
 	 */
-	private String getRepo(String url, String user) throws InvalideGithubUrlException {
+	private String getRepo(String url, String user) throws InvalideMethodUrlException {
 		int begin, end;
 		String refText="https://github.com/" + user + "/";
 		begin = url.indexOf(refText);
 		if(begin<0){
-			throw new InvalideGithubUrlException("Impossible to extract the "+user+"'s repository from "+url);
+			throw new InvalideMethodUrlException("Impossible to extract the "+user+"'s repository from "+url);
 		}else{    			
 			begin += refText.length();
 			end = url.substring(begin).indexOf("/");
 			if(end<0){
-				throw new InvalideGithubUrlException("Impossible to extract the "+user+"'s repository from "+url);
+				throw new InvalideMethodUrlException("Impossible to extract the "+user+"'s repository from "+url);
 			}else{
 				end += begin;
 			}
@@ -315,7 +296,11 @@ public class Github extends Api{
 
 		/* IV. Récupération des commits */
 		for (int i = 0; i < users.size(); i++) {
-			commits.put(getCommit(users.get(i), repos.get(i)));
+			try {
+				commits.put(getCommit(users.get(i), repos.get(i)));
+			} catch (OldVersionNotFoundException e) {
+				System.err.println(e.getMessage());
+			}
 		}
 		
 		/* V. Récupération de la taille des commits et construction du score final */
@@ -327,7 +312,7 @@ public class Github extends Api{
 				scoreTemp = 0;
 				// Loop on each commit of the given project
 				for (int k = -1; k < nbOfSavedCommit-1; k++) {
-					commitInformation = new JSONObject(getJSONstring("https://api.github.com/repos/"+
+					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
 							commit.getString("user")+
 							"/"+commit.getString("repo")+
 							"/compare/"+commit.getString("commitAt_t"+k)+
