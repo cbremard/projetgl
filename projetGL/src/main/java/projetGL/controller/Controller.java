@@ -30,7 +30,7 @@ public class Controller {
 	 * @param list_method
 	 */
 	public void run(){
-		int globalScore = 0;
+		float globalScore = 0;
 		// Si github est cochée dans l'IHM
 		list_method.get(0).prepare();
 

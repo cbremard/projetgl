@@ -16,5 +16,11 @@ public abstract class Api extends MethodJunior{
 		return maxRequest;
 	}
 	
-	abstract public JSONObject getCommit(String user, String repository);
+	abstract protected JSONObject getCommit(String user, String repository);
+	
+	private String sendRequest(String request){
+		String result="";
+		
+		return result;
+	}
 }
