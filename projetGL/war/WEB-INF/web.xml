@@ -8,17 +8,17 @@
   <!-- Servlets -->
   <servlet>
     <servlet-name>greetServlet</servlet-name>
-    <servlet-class>com.projetGL.server.GreetingServiceImpl</servlet-class>
+    <servlet-class>projetGL.IHM.server.GreetingServiceImpl</servlet-class>
   </servlet>
   
   <servlet-mapping>
     <servlet-name>greetServlet</servlet-name>
-    <url-pattern>/projetgl/greet</url-pattern>
+    <url-pattern>/ihm/greet</url-pattern>
   </servlet-mapping>
   
   <!-- Default page to serve -->
   <welcome-file-list>
-    <welcome-file>ProjetGL.html</welcome-file>
+    <welcome-file>IHM.html</welcome-file>
   </welcome-file-list>
 
 </web-app>
