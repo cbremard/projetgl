@@ -65,7 +65,7 @@ public class GoogleSearch extends MethodJunior{
 		try {
 			HttpsURLConnection.setDefaultHostnameVerifier(new NullHostnameVerifier());
 			doc = Jsoup.connect(request).userAgent("Firefox").get();
-			nbPages = (long) Math.ceil(0.1*getNbResult(doc));
+			nbPages = (long) Math.ceil(0.1*getNbResult(doc)); // On récupère le nombre de résultats et on veut le nombre de pages (10 résultats par page)
 			System.out.println(nbPages + " pages");
 			nbPages = Math.min(100, nbPages); // On se limite à 100 pages
 			for (long i = 0; i < nbPages; i++) {
