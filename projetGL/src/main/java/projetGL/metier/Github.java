@@ -18,38 +18,6 @@ import progetGL.exceptions.OldVersionNotFoundException;
 import projetGL.controller.Controller;
 
 public class Github extends Api{
-	
-//	public static void main( String[] args ){
-//		Github git = Github.getInstance();
-//		String user, repository, url;
-//		user = "cbremard";
-//		repository = "projetGL";
-//		url = "https://api.github.com/repos/"+user+"/"+repository+"/events";
-//		System.out.println("Start !!!");
-//		try {
-//			git.sendMultiPagesRequest(url);
-//		} catch (HttpException e) {
-//			System.err.println("Erreur dans la classe maître.");
-//			e.printStackTrace();
-//		} catch (InvalideMethodUrlException e) {
-//			System.err.println("Erreur dans la classe maître.");
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			System.err.println("Erreur dans la classe maître.");
-//			e.printStackTrace();
-//		} catch (MaxRequestException e) {
-//			System.err.println("Erreur dans la classe maître.");
-//			e.printStackTrace();
-//		}
-//		System.out.println("End !!!");
-//	}
-	
-	
-	
-	
-	
-	
-	
 	private static Github uniqueGithub = null;
 	private static final int nbOfSavedCommit = 3;
 	float coeff;
@@ -337,15 +305,17 @@ public class Github extends Api{
 		endURL = "pom.xml";
 
 		/* II. Récupération des utilisateurs et répertoires via une recherche Google */
-		//		urls = gs.getUrlResult(request,endURL);
-		//		for (String url : urls) {
-		//				temp = getUser(url);
-		//				users.add(temp);
-		//				repos.add(getRepo(url,temp));
-		//		}
+				urls = gs.getUrlResult(request,endURL);
+				for (String url : urls) {
+						try {
+							temp = getUser(url);
+							users.add(temp);
+							repos.add(getRepo(url,temp));
+						} catch (InvalideMethodUrlException e) {
+							e.getMessage();
+						}
+				}
 
-		users.add("cbremard");
-		repos.add("projetGL");
 
 		/* III. Suppression des couples user/repo en double */
 		index=1;
