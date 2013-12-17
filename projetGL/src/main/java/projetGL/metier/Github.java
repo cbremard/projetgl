@@ -6,9 +6,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,6 +18,38 @@ import progetGL.exceptions.OldVersionNotFoundException;
 import projetGL.controller.Controller;
 
 public class Github extends Api{
+	
+//	public static void main( String[] args ){
+//		Github git = Github.getInstance();
+//		String user, repository, url;
+//		user = "cbremard";
+//		repository = "projetGL";
+//		url = "https://api.github.com/repos/"+user+"/"+repository+"/events";
+//		System.out.println("Start !!!");
+//		try {
+//			git.sendMultiPagesRequest(url);
+//		} catch (HttpException e) {
+//			System.err.println("Erreur dans la classe maître.");
+//			e.printStackTrace();
+//		} catch (InvalideMethodUrlException e) {
+//			System.err.println("Erreur dans la classe maître.");
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			System.err.println("Erreur dans la classe maître.");
+//			e.printStackTrace();
+//		} catch (MaxRequestException e) {
+//			System.err.println("Erreur dans la classe maître.");
+//			e.printStackTrace();
+//		}
+//		System.out.println("End !!!");
+//	}
+	
+	
+	
+	
+	
+	
+	
 	private static Github uniqueGithub = null;
 	private static final int nbOfSavedCommit = 3;
 	float coeff;
@@ -88,7 +118,7 @@ public class Github extends Api{
 		boolean oldVersionFound = false;
 		/* I. Récupération de tous les événnements liés au répertoire donné */
 		try {
-			temporaryStr = sendRequest("https://api.github.com/repos/"+user+"/"+repository+"/events");
+			temporaryStr = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/events");
 			jsonTemp1 = new JSONArray(temporaryStr);
 		} catch (JSONException e) {
 			System.err.println("JSONArray parsing error : " + temporaryStr);
@@ -122,7 +152,7 @@ public class Github extends Api{
 						+ repository+"/"
 						+ jsonTemp2.getJSONObject(i).getString("head")+"/"
 						+ repository+"/pom.xml";
-				temporaryStr = sendRequest(temporaryStr);
+				temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 				temporaryStr.replaceAll(" ", "");
 				if(temporaryStr.contains(Controller.getOldVersion()) && temporaryStr.contains(Controller.getLibrairie())){
 					oldVersionFound = true;
@@ -207,6 +237,7 @@ public class Github extends Api{
 	
 	/**
 	 * Permet d'obtenir la taille en octets d'un répertoire d'un utilisateur.
+	 * @author BREMARD Corentin
 	 * @param user: le propriétaire du projet
 	 * @param repo: le répertoire du projet
 	 * @return la taille en octets du projet si tout se passe bien. Lève une exception sinon.
@@ -235,6 +266,38 @@ public class Github extends Api{
 		}
 		return size;
 	}
+	
+	/**
+	 * Les requêtes github qui retourne plusieurs objects sont limités à 30 objets par réponses par défaut. Cette méthode permet de récupérer l'ensemble des résultats.
+	 * Cette méthode surcharge la méthode mère sendRequest(String request)
+	 * @author BREMARD corentin
+	 * @param request : l'url générale qui permet d'affiche la première page de résultats
+	 * @throws MaxRequestException 
+	 * @throws IOException 
+	 * @throws InvalideMethodUrlException 
+	 * @throws HttpException 
+	 * @return result : un JSONArray sous format string
+	 */
+	private String sendMultiPagesRequest(String request) throws HttpException, InvalideMethodUrlException, IOException, MaxRequestException{
+		String finalResult, UriNextPage, linkResponse, bodyResponse;
+		GetMethod gmethod;
+		
+		finalResult = "[";
+		UriNextPage = request;
+		while(UriNextPage != null && UriNextPage.length()>0){
+			gmethod = sendRequest(UriNextPage);
+			bodyResponse = gmethod.getResponseBodyAsString();
+			if(bodyResponse.length()>3){
+				finalResult += bodyResponse.substring(1, bodyResponse.length()-1)+",";
+				linkResponse = gmethod.getResponseHeader("Link").getValue();
+				UriNextPage = linkResponse.subSequence(linkResponse.indexOf("<")+1, linkResponse.indexOf(">")).toString();
+			}else{
+				UriNextPage = "";
+			}
+		}
+		finalResult = finalResult.substring(0, finalResult.length()-1) + "]";
+		return finalResult;
+	}
 
 	/**
 	 * Méthode maître de la classe Github. C'est elle qui calculer le score demandé.
@@ -246,6 +309,7 @@ public class Github extends Api{
 	 *    III. Suppression des couples user/repo en double
 	 *    IV. Récupération des commits
 	 *    V. Récupération de la taille des commits et construction du score final
+	 * @author BREMARD Corentin
 	 * @return le score du modèle
 	 */
 	public float compute() {
@@ -316,7 +380,7 @@ public class Github extends Api{
 							commit.getString("user")+
 							"/"+commit.getString("repo")+
 							"/compare/"+commit.getString("commitAt_t"+k)+
-							"..."+commit.getString("commitAt_t"+(k+1))+""));
+							"..."+commit.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
 					informations = commitInformation.getJSONArray("files");
 					// Other loop because sometime, you have more than one commit between two given SHA
 					for (int l = 0; l < informations.length(); l++) {

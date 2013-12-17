@@ -31,6 +31,7 @@ public abstract class Api extends MethodJunior{
 	/**
 	 * Gères les requêtes lancées sur les APIs de Github et incrément le compteur de requête.
 	 * @author BREMARD Corentin
+	 * @param multiPages 
 	 * @param url: l'url à soumettre
 	 * @return le Json renvoyé par les API de Github si tout ce passe bien. Lève une exception sinon.
 	 * @throws InvalideMethodUrlException 
@@ -38,24 +39,21 @@ public abstract class Api extends MethodJunior{
 	 * @throws HttpException 
 	 * @throws MaxRequestException 
 	 */
-	protected String sendRequest(String request) throws InvalideMethodUrlException, HttpException, IOException, MaxRequestException{
-		String result="";
+	protected GetMethod sendRequest(String request) throws InvalideMethodUrlException, HttpException, IOException, MaxRequestException{
 		int statusCode;
 		HttpClient client = new HttpClient();
 		GetMethod gmethod;
-		if(resquestCounter<maxRequest){
+		if(resquestCounter>=maxRequest){
+			throw new MaxRequestException("You reached the maximum of request on Github's API");
+		}else{
 			gmethod = new GetMethod(request);
 			statusCode = client.executeMethod(gmethod);
 			resquestCounter++;
 			if (statusCode != HttpStatus.SC_OK) {
 				System.err.print("Unexpected result with URL "+request+" : ");
 				throw new InvalideMethodUrlException(gmethod.getStatusText());
-			}else{
-				result = gmethod.getResponseBodyAsString();
 			}
-		}else{
-			throw new MaxRequestException("You reached the maximum of request on Github's API");
 		}
-		return result;
+		return gmethod;
 	}
 }
