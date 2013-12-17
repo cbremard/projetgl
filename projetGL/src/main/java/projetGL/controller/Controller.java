@@ -45,7 +45,7 @@ public class Controller {
 
 	public static String getLibrairie() {
 		// TODO Auto-generated method stub
-		return "junit";
+		return "projet";
 	}
 
 	public static String getNewVersion() {
