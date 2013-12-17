@@ -50,7 +50,8 @@ public class GoogleSearch extends MethodJunior{
 	
 	
 	/**
-	 * 
+	 * Méthode qui interroge Google via des requêtes pour récupérer les URLs
+	 * contenant le mot clé donné en paramètre
 	 * @param request : requête Google
 	 * @param keyword : mot clé qui détermine quelles urls nous intéressent
 	 * @return
@@ -58,40 +59,35 @@ public class GoogleSearch extends MethodJunior{
 	public ArrayList<String> getUrlResult(String request, String keyword){
 		ArrayList<String> urls = new ArrayList<String>();
 		String linkHref;
-		double nbPages;
+		long nbPages;
 		Document doc;
 		Elements links;
 		try {
 			HttpsURLConnection.setDefaultHostnameVerifier(new NullHostnameVerifier());
 			doc = Jsoup.connect(request).userAgent("Firefox").get();
-			nbPages = Math.ceil(0.1*getNbResult(doc));
-			nbPages = 1;
+			nbPages = (long) Math.ceil(0.1*getNbResult(doc));
 			System.out.println(nbPages + " pages");
-			for (double i = 0; i < nbPages; i++) {
+			nbPages = Math.min(100, nbPages); // On se limite à 100 pages
+			for (long i = 0; i < nbPages; i++) {
 				if(i>0){
-					System.out.println(i);
 					doc = Jsoup.connect(request+"&start="+10*i).userAgent("Firefox").get();
 				}
 				links = doc.getElementsByTag("a");
 				for (org.jsoup.nodes.Element link : links) {
 					linkHref = link.attr("href");
-					System.out.println(linkHref);
 					if(linkHref.contains(keyword)){
-						// TODO fonctionne pas avec le keyword "pom.xml" aucun résultat trouvé
-						System.out.println("dans keywords");
-						
 						urls.add(linkHref);
 					}
 				}
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			System.err.println("Erreur au niveau des requêtes Google");
 			e.printStackTrace();
 		}
-		System.out.println("urls");
+		/*System.out.println("urls");
 		for (String url : urls){
 			System.out.println(url);
-		}
+		}*/
 		return urls;
 	}
 
