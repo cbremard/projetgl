@@ -343,7 +343,10 @@ public class Github extends Api{
 		// TODO Change next line
 		request = "https://www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
-				+ "&q=%22"+Controller.getArtefactId()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com"
+				+ "&q=%22" +Controller.getGroupId()
+				+ "%22+%22"+Controller.getArtefactId()
+				+ "%22+%22"+Controller.getNewVersion()
+				+ "%22+site:github.com"
 				+ "&ie=utf-8"
 				+ "&oe=utf-8"
 				+ "&gws_rd=cr"
