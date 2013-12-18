@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -83,7 +84,7 @@ public class Github extends Api{
 		JSONArray jsonTemp1 = new JSONArray();
 		JSONArray jsonTemp2 = new JSONArray();
 		String temporaryStr = "";
-		boolean oldVersionFound = false;
+		boolean haveBeforeParam, oldVersionFound = false;
 		/* I. Récupération de tous les événnements liés au répertoire donné */
 		try {
 			temporaryStr = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/events");
@@ -96,16 +97,19 @@ public class Github extends Api{
 		}
 		/* II. Sélection des commits uniquement */
 		for (int i = 0; i < jsonTemp1.length(); i++) {
+			haveBeforeParam = false;
 			try {
 				if(jsonTemp1.getJSONObject(i).getString("type").equals("PushEvent")){
 					temporaryStr = "{";
 					temporaryStr += "\"head\":\"" + jsonTemp1.getJSONObject(i).getJSONObject("payload").getString("head") +"\",";
 					temporaryStr += "\"before\":\"" + jsonTemp1.getJSONObject(i).getJSONObject("payload").getString("before") +"\"}";
+					haveBeforeParam = true;
 					jsonTemp2.put(new JSONObject(temporaryStr));
 				}
 			} catch (JSONException e) {
-				System.err.println("One error appened during creation of jsonTemp2.");
-				e.printStackTrace();
+				if(haveBeforeParam){
+					System.err.println("One error appened when trying to parse a String to JSON : "+e);
+				}
 			}
 		}
 		//The commit jsonTemp2.getJSONObject(i) is after the commit jsonTemp2.getJSONObject(i+1) 
@@ -283,10 +287,9 @@ public class Github extends Api{
 	public float compute() {
 		state = new StateRunning();
 		/* I. Initiation des variables */
-		String request, endURL, temp;
+		String request, endURL, temp, user, repo;
 		ArrayList<String> urls = new ArrayList<String>();
-		ArrayList<String> users = new ArrayList<String>();
-		ArrayList<String> repos = new ArrayList<String>();
+		ArrayList<Pair> usersRepos = new ArrayList<Pair>();
 		JSONArray commits = new JSONArray();
 		JSONArray informations = new JSONArray();
 		JSONObject commitInformation  = new JSONObject();
@@ -306,12 +309,40 @@ public class Github extends Api{
 		endURL = "pom.xml";
 
 		/* II. Récupération des utilisateurs et répertoires via une recherche Google */
-		urls = gs.getUrlResult(request,endURL);
+//		urls = gs.getUrlResult(request,endURL);
+		urls.add("/url?q=https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCgQFjAB&usg=AFQjCNHq7BRpDuU7pkkMpz7RvOziAEX08w");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:c3D7xLADygcJ:https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCsQIDAB&usg=AFQjCNHLUJ5QLu95jT6aLpAjvxUlb6d2og");
+		urls.add("/url?q=https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CC0QFjAC&usg=AFQjCNHoZLLKtuutPbal6KX0OmmomYRapw");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:5ww8N8D1D70J:https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CDAQIDAC&usg=AFQjCNGz1yEMfNLwDRE9d2QubTP_b8KZIA");
+		urls.add("/url?q=https://github.com/aktos/projet/blob/master/projet/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CEgQFjAH&usg=AFQjCNGnM5q2CdPHq_fVxYnjnzqVOKMrVQ");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:sGYrjHJKYRMJ:https://github.com/aktos/projet/blob/master/projet/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CEsQIDAH&usg=AFQjCNERbBtY2d8DLD2dP1jW8Ad0DebFtA");
+		urls.add("/url?q=https://github.com/abois/mywebapp/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CE0QFjAI&usg=AFQjCNG36i9_EqydOK2MFujYNgUYt4AWHw");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:znwfzAr9m54J:https://github.com/abois/mywebapp/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CFAQIDAI&usg=AFQjCNGBwmSq6amYHhcK74f1vQvkpMNuYg");
+		urls.add("/url?q=https://github.com/divarvel/TA-Melog/blob/master/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CCMQFjAAOAo&usg=AFQjCNGUekbiGWAz3Bhwxyqc7tdNMkl_IA");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:ugN72Njg4MQJ:https://github.com/divarvel/TA-Melog/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CCYQIDAAOAo&usg=AFQjCNHtKmCY_ucXv7CmYR5pY6Imp3K1Iw");
+		urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet-15-webapp/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CC0QFjACOAo&usg=AFQjCNHrDPt4KhDzJuhonhxbRJO5U_8KeA");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:0AY_sfQOD80J:https://github.com/Pasquet/projet-15min/blob/master/projet-15-webapp/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CDAQIDACOAo&usg=AFQjCNEdjBVZRuKmTxSbN2nu9StvTHF3Ag");
+		urls.add("/url?q=https://github.com/trich/tiw5-2011-tp2/blob/master/projet/modele/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CEYQFjAHOAo&usg=AFQjCNF1O6vxYk-DcMKGbWUfBsBGVCclvQ");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:xl6BQbLFxDUJ:https://github.com/trich/tiw5-2011-tp2/blob/master/projet/modele/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CEkQIDAHOAo&usg=AFQjCNEM9MkLqryx2FyfdrV4WZz3mI8-7w");
+		urls.add("/url?q=https://github.com/sunye/AlmaGTD/blob/master/GTDClientKrom/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCMQFjAAOBQ&usg=AFQjCNE6_iokobDiiL84vHLkIcu-E4H18A");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:TGtHVX_GFuEJ:https://github.com/sunye/AlmaGTD/blob/master/GTDClientKrom/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCYQIDAAOBQ&usg=AFQjCNFh2jb13Fyiru4K4K92SWvAb_Mlrg");
+		urls.add("/url?q=https://github.com/sunye/AlmaGTD/blob/master/GTDWebClient/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCgQFjABOBQ&usg=AFQjCNFsF5k9N8SoNuJfWPSx0r1ygk_fTg");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:eKNE2-pnRXAJ:https://github.com/sunye/AlmaGTD/blob/master/GTDWebClient/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCsQIDABOBQ&usg=AFQjCNEP6HnVdEwd-LsaKNbS0gUI5Pkfdw");
+		urls.add("/url?q=https://github.com/trich/tiw5-2011-tp2/blob/master/projet/web-interface/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CC0QFjACOBQ&usg=AFQjCNE6iikCLQk5gMbtFSNDZxmo6pXRkQ");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:7OnQeUY7rgMJ:https://github.com/trich/tiw5-2011-tp2/blob/master/projet/web-interface/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDAQIDACOBQ&usg=AFQjCNE0zBKxtr2VEOGL57-Hhkru2ICcpA");
+		urls.add("/url?q=https://github.com/ChristelleLacan/QuizZer/blob/master/QuizZer/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDgQFjAEOBQ&usg=AFQjCNFijrGvKrNW-MV9ON9HZk6s78lGiQ");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:aJufrzJh028J:https://github.com/ChristelleLacan/QuizZer/blob/master/QuizZer/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDsQIDAEOBQ&usg=AFQjCNHI8LgYMZS4PNVBW5OfsCMZs_wzkQ");
+		urls.add("/url?q=https://github.com/pthurotte/testDevCloud/blob/master/appSuiviExploit-webapp/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CEgQFjAHOBQ&usg=AFQjCNEfNr0fhMxzCqMBN2H5yC-IAVU7xA");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:D2_mfqBYiqwJ:https://github.com/pthurotte/testDevCloud/blob/master/appSuiviExploit-webapp/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CEsQIDAHOBQ&usg=AFQjCNFnGuSOd9rgqxyNjG26RTlKMGlHUw");
+		urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CE0QFjAIOBQ&usg=AFQjCNFNDRAKdBX-GzMOiXiQ-l4Xc8rZkg");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
+		
+
 		for (String url : urls) {
 			try {
-				temp = getUser(url);
-				users.add(temp);
-				repos.add(getRepo(url,temp));
+				user = getUser(url);
+				repo = getRepo(url,user);
+				usersRepos.add(new Pair(user, repo));
 			} catch (InvalideMethodUrlException e) {
 				e.getMessage();
 			}
@@ -319,72 +350,65 @@ public class Github extends Api{
 
 
 		/* III. Suppression des couples user/repo en double */
+		Collections.sort(usersRepos, new PairComparator());
 		index=1;
-for (int i = 0; i < users.size(); i++) {System.out.println(users.get(i)+" - "+repos.get(i));}
-System.out.println("Start !!!");
-		while(index < users.size()) {
-System.out.println("Step "+index+"/"+users.size()+" :");
-System.out.println("    users.get(index-1)==users.get(index) is " + users.get(index-1).equals(users.get(index)));
-System.out.println("    repos.get(index-1)==repos.get(index) is " + repos.get(index-1).equals(repos.get(index)));
-			if(users.get(index-1)==users.get(index) && repos.get(index-1)==repos.get(index)){
-				users.remove(index);
-				repos.remove(index);
+		while(index < usersRepos.size()) {
+			if(usersRepos.get(index-1).equals(usersRepos.get(index))){
+				usersRepos.remove(index);
 			}else{
 				index++;
 			}
 		}	
-for (int i = 0; i < users.size(); i++) {System.out.println(users.get(i)+" - "+repos.get(i));}
 
-//		/* IV. Récupération des commits */
-//		for (int i = 0; i < users.size(); i++) {
-//			try {
-//				commits.put(getCommit(users.get(i), repos.get(i)));
-//			} catch (OldVersionNotFoundException e) {
-//				System.err.println(e.getMessage());
-//			}
-//		}
-//		
-//		/* V. Récupération de la taille des commits et construction du score final */
-//		score=0;
-//		// Loop on all projets found
-//		for (int j = 0; j < commits.length(); j++) {
-//			try {
-//				commit = commits.getJSONObject(j);
-//				scoreTemp = 0;
-//				// Loop on each commit of the given project
-//				for (int k = -1; k < nbOfSavedCommit-1; k++) {
-//					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
-//							commit.getString("user")+
-//							"/"+commit.getString("repo")+
-//							"/compare/"+commit.getString("commitAt_t"+k)+
-//							"..."+commit.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
-//					informations = commitInformation.getJSONArray("files");
-//					// Other loop because sometime, you have more than one commit between two given SHA
-//					for (int l = 0; l < informations.length(); l++) {
-//						scoreTemp += informations.getJSONObject(l).getInt("changes");
-//					}
-//				}
-//				// divide scoreTemp by the project's size in order to have the percentage of number of modified lines	
-//				projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
-//				if(projectSize >0){
-//					// In average, a line is 35 octets (it's the case for this document)
-//					score += (float) 35*scoreTemp/projectSize;
-//				}
-//			}catch (JSONException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			} catch (Exception e) {
-//				System.err.println(e.getMessage());
-//				e.printStackTrace();
-//			}
-//		}
-//		// And divide the final score by the number of projects found in order to have the mean.
-//		if(commits.length()>0){
-//			score = (float) score /commits.length();
-//		}else{
-//			score = 0;
-//		}
-//		return score;
-return 0;
+		/* IV. Récupération des commits */
+		for (int i = 0; i < usersRepos.size(); i++) {
+			try {
+				commits.put(getCommit(usersRepos.get(i).getLeft(), usersRepos.get(i).getRight()));
+			} catch (OldVersionNotFoundException e) {
+				System.err.println(e.getMessage());
+			}
+		}
+		
+		/* V. Récupération de la taille des commits et construction du score final */
+		score=0;
+		// Loop on all projets found
+		for (int j = 0; j < commits.length(); j++) {
+			try {
+				commit = commits.getJSONObject(j);
+				scoreTemp = 0;
+				// Loop on each commit of the given project
+				for (int k = -1; k < nbOfSavedCommit-1; k++) {
+					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
+							commit.getString("user")+
+							"/"+commit.getString("repo")+
+							"/compare/"+commit.getString("commitAt_t"+k)+
+							"..."+commit.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
+					informations = commitInformation.getJSONArray("files");
+					// Other loop because sometime, you have more than one commit between two given SHA
+					for (int l = 0; l < informations.length(); l++) {
+						scoreTemp += informations.getJSONObject(l).getInt("changes");
+					}
+				}
+				// divide scoreTemp by the project's size in order to have the percentage of number of modified lines	
+				projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
+				if(projectSize >0){
+					// In average, a line is 35 octets (it's the case for this document)
+					score += (float) 35*scoreTemp/projectSize;
+				}
+			}catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		// And divide the final score by the number of projects found in order to have the mean.
+		if(commits.length()>0){
+			score = (float) score /commits.length();
+		}else{
+			score = 0;
+		}
+		return score;
 	}
 }
