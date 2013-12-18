@@ -281,6 +281,7 @@ public class Github extends Api{
 	 * @return le score du modèle
 	 */
 	public float compute() {
+		state = new StateRunning();
 		/* I. Initiation des variables */
 		String request, endURL, temp;
 		ArrayList<String> urls = new ArrayList<String>();
@@ -305,21 +306,26 @@ public class Github extends Api{
 		endURL = "pom.xml";
 
 		/* II. Récupération des utilisateurs et répertoires via une recherche Google */
-				urls = gs.getUrlResult(request,endURL);
-				for (String url : urls) {
-						try {
-							temp = getUser(url);
-							users.add(temp);
-							repos.add(getRepo(url,temp));
-						} catch (InvalideMethodUrlException e) {
-							e.getMessage();
-						}
-				}
+		urls = gs.getUrlResult(request,endURL);
+		for (String url : urls) {
+			try {
+				temp = getUser(url);
+				users.add(temp);
+				repos.add(getRepo(url,temp));
+			} catch (InvalideMethodUrlException e) {
+				e.getMessage();
+			}
+		}
 
 
 		/* III. Suppression des couples user/repo en double */
 		index=1;
+for (int i = 0; i < users.size(); i++) {System.out.println(users.get(i)+" - "+repos.get(i));}
+System.out.println("Start !!!");
 		while(index < users.size()) {
+System.out.println("Step "+index+"/"+users.size()+" :");
+System.out.println("    users.get(index-1)==users.get(index) is " + users.get(index-1).equals(users.get(index)));
+System.out.println("    repos.get(index-1)==repos.get(index) is " + repos.get(index-1).equals(repos.get(index)));
 			if(users.get(index-1)==users.get(index) && repos.get(index-1)==repos.get(index)){
 				users.remove(index);
 				repos.remove(index);
@@ -327,56 +333,58 @@ public class Github extends Api{
 				index++;
 			}
 		}	
+for (int i = 0; i < users.size(); i++) {System.out.println(users.get(i)+" - "+repos.get(i));}
 
-		/* IV. Récupération des commits */
-		for (int i = 0; i < users.size(); i++) {
-			try {
-				commits.put(getCommit(users.get(i), repos.get(i)));
-			} catch (OldVersionNotFoundException e) {
-				System.err.println(e.getMessage());
-			}
-		}
-		
-		/* V. Récupération de la taille des commits et construction du score final */
-		score=0;
-		// Loop on all projets found
-		for (int j = 0; j < commits.length(); j++) {
-			try {
-				commit = commits.getJSONObject(j);
-				scoreTemp = 0;
-				// Loop on each commit of the given project
-				for (int k = -1; k < nbOfSavedCommit-1; k++) {
-					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
-							commit.getString("user")+
-							"/"+commit.getString("repo")+
-							"/compare/"+commit.getString("commitAt_t"+k)+
-							"..."+commit.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
-					informations = commitInformation.getJSONArray("files");
-					// Other loop because sometime, you have more than one commit between two given SHA
-					for (int l = 0; l < informations.length(); l++) {
-						scoreTemp += informations.getJSONObject(l).getInt("changes");
-					}
-				}
-				// divide scoreTemp by the project's size in order to have the percentage of number of modified lines	
-				projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
-				if(projectSize >0){
-					// In average, a line is 35 octets (it's the case for this document)
-					score += (float) 35*scoreTemp/projectSize;
-				}
-			}catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (Exception e) {
-				System.err.println(e.getMessage());
-				e.printStackTrace();
-			}
-		}
-		// And divide the final score by the number of projects found in order to have the mean.
-		if(commits.length()>0){
-			score = (float) score /commits.length();
-		}else{
-			score = 0;
-		}
-		return score;
+//		/* IV. Récupération des commits */
+//		for (int i = 0; i < users.size(); i++) {
+//			try {
+//				commits.put(getCommit(users.get(i), repos.get(i)));
+//			} catch (OldVersionNotFoundException e) {
+//				System.err.println(e.getMessage());
+//			}
+//		}
+//		
+//		/* V. Récupération de la taille des commits et construction du score final */
+//		score=0;
+//		// Loop on all projets found
+//		for (int j = 0; j < commits.length(); j++) {
+//			try {
+//				commit = commits.getJSONObject(j);
+//				scoreTemp = 0;
+//				// Loop on each commit of the given project
+//				for (int k = -1; k < nbOfSavedCommit-1; k++) {
+//					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
+//							commit.getString("user")+
+//							"/"+commit.getString("repo")+
+//							"/compare/"+commit.getString("commitAt_t"+k)+
+//							"..."+commit.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
+//					informations = commitInformation.getJSONArray("files");
+//					// Other loop because sometime, you have more than one commit between two given SHA
+//					for (int l = 0; l < informations.length(); l++) {
+//						scoreTemp += informations.getJSONObject(l).getInt("changes");
+//					}
+//				}
+//				// divide scoreTemp by the project's size in order to have the percentage of number of modified lines	
+//				projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
+//				if(projectSize >0){
+//					// In average, a line is 35 octets (it's the case for this document)
+//					score += (float) 35*scoreTemp/projectSize;
+//				}
+//			}catch (JSONException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} catch (Exception e) {
+//				System.err.println(e.getMessage());
+//				e.printStackTrace();
+//			}
+//		}
+//		// And divide the final score by the number of projects found in order to have the mean.
+//		if(commits.length()>0){
+//			score = (float) score /commits.length();
+//		}else{
+//			score = 0;
+//		}
+//		return score;
+return 0;
 	}
 }

@@ -81,8 +81,9 @@ public class GoogleSearch extends MethodJunior{
 				}
 			}
 		} catch (IOException e) {
-			System.err.println("Erreur au niveau des requêtes Google");
-			e.printStackTrace();
+			System.err.println("Erreur au niveau des requêtes Google : " + e);
+		} catch (NullPointerException e){
+			System.err.println("Echec de la connexion");
 		}
 		/*System.out.println("urls");
 		for (String url : urls){
