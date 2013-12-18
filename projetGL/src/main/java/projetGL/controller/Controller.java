@@ -43,6 +43,13 @@ public class Controller {
 		System.out.println("Final score = " + globalScore);
 	}
 
+	
+
+	public static String getGroupId() {
+		// TODO Auto-generated method stub
+		return "junit";
+	}
+	
 	public static String getLibrairie() {
 		// TODO Auto-generated method stub
 		return "projet";

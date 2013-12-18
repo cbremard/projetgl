@@ -4,11 +4,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.swing.text.Element;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+
+import projetGL.controller.Controller;
 
 public class GoogleSearch extends MethodJunior{
 	private static GoogleSearch uniqueGoogle = null;
@@ -19,6 +20,10 @@ public class GoogleSearch extends MethodJunior{
 		}
 		return uniqueGoogle;
 	}
+	
+	
+	
+	
 	/**
 	 * Permet, grâce à l'analyse de la page HTML renvoyée pour une requête Google,
 	 * de trouver le nombre de résultats pour cette même requête.
@@ -42,7 +47,7 @@ public class GoogleSearch extends MethodJunior{
 		}
 		
 		NbResult = Integer.parseInt(nombre);
-		System.out.println(NbResult);
+		System.out.println("Nombre de résultats poour la requête Google : " + NbResult);
 		
 		return NbResult;
 	}
@@ -67,7 +72,7 @@ public class GoogleSearch extends MethodJunior{
 			doc = Jsoup.connect(request).userAgent("Firefox").get();
 			nbPages = (long) Math.ceil(0.1*getNbResult(doc)); // On récupère le nombre de résultats et on veut le nombre de pages (10 résultats par page)
 			System.out.println(nbPages + " pages");
-			nbPages = Math.min(100, nbPages); // On se limite à 100 pages
+			nbPages = Math.min(100, nbPages); // On se limite à 100 pages (Google n'affiche rien après le 1000ième résultat)
 			for (long i = 0; i < nbPages; i++) {
 				if(i>0){
 					doc = Jsoup.connect(request+"&start="+10*i).userAgent("Firefox").get();
@@ -92,15 +97,75 @@ public class GoogleSearch extends MethodJunior{
 		return urls;
 	}
 
+	
 	@Override
 	public float getScore() {
-		// TODO Auto-generated method stub
-		// return GoogleSearch.getInstance().getNbResult("theREquest");
-		return 0;
+		return GoogleSearch.getInstance().score;
 	}
 
+	public void setScore(float _score){
+		GoogleSearch.getInstance().score = _score;
+	}
+	
+	
+	
+	
+	/**
+	 * calcul_score() lance un appel à compute() pour le calcul du score.
+	 * Les différents cas d'utilisation sont gérés via le paramètre state.
+	 * @author fanny
+	 * @return result: le score généré par la méthode
+	 */
+	public float calcul_score() {
+		float result = 0;
+		try {
+			result = state.compute(this);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			System.out.println("The score will have a value of 0.");
+		}
+		if(score>0){
+			state = new StateSuccess();
+		}else{
+			state = new StateFailure();
+		}
+		return result;
+	}
+	
+	/**
+	 * Exécute le calcul de score pour la méthode "GoogleSearch" si cette dernière est cochée par l'utilisateur
+	 * 
+	 * @author fanny
+	 * @return TODO
+	 */
 	public float compute() {
-		// TODO Auto-generated method stub
+		state = new StateRunning();
+		float _score = 0;
+		float _scoreInit=0;
+		String request = "https://www.google.fr/search?client=ubuntu"
+				+ "&channel=fs"
+				+ "&q=%22"+Controller.getGroupId()
+				+ "%22+%22"+Controller.getLibrairie()
+				+ "%22+%22"+Controller.getNewVersion()+ "%22"
+				+ "&ie=utf-8"
+				+ "&oe=utf-8"
+				+ "&gws_rd=cr"
+				+ "&ei=UwyeUva_KuvY7AaK04CICg";
+		Document doc;
+		
+		try {
+			HttpsURLConnection.setDefaultHostnameVerifier(new NullHostnameVerifier());
+			doc = Jsoup.connect(request).userAgent("Firefox").get();
+			_scoreInit = GoogleSearch.getInstance().getNbResult(doc);
+		} catch (IOException e){
+			System.err.println("Erreur au niveau de la requête Google : " + e);
+		}
+		// TODO calcul du score réel
+		_score = _scoreInit;
+		
+		GoogleSearch.getInstance().setScore(_score);
+		
+		// TODO Quoi à retourner ?
 		return 0;
 	}
 

@@ -1,7 +1,5 @@
 package projetGL;
 
-import javax.net.ssl.HttpsURLConnection;
-
 import projetGL.controller.Controller;
 
 
@@ -11,11 +9,10 @@ import projetGL.controller.Controller;
  *
  */
 public class Main {
-    public static void main( String[] args ){
-    	
-    	Controller c = new Controller();
-    	c.init();
-    	c.run();
-    	
-    }
+	public static void main( String[] args ){
+
+		Controller c = new Controller();
+		c.init();
+		c.run();
+	}
 }
