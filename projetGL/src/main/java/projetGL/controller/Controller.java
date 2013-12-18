@@ -52,18 +52,18 @@ public class Controller {
 	
 	public static String getArtefactId() {
 		// TODO Auto-generated method stub
-		return "projet";
+		return "junit";
 	}
 
 	public static String getNewVersion() {
 		// TODO Auto-generated method stub
-		return "3.8.1";
+		return "3.8";
 	}
 
 
 	public static CharSequence getOldVersion() {
 		// TODO Auto-generated method stub
-		return "4.11";
+		return "3.7";
 	}
 
 }

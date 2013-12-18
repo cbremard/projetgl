@@ -1,7 +1,6 @@
 package projetGL.metier;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,45 +21,6 @@ import progetGL.exceptions.OldVersionNotFoundException;
 import projetGL.controller.Controller;
 
 public class Github extends Api{
-	
-	public static void main( String[] args ){
-		String url1, url2, code;
-		HttpClient client = new HttpClient();
-		GetMethod gmethod;
-		PostMethod pmethod;
-		int statusCode;
-		url1 = "https://github.com/login/oauth/authorize?client_id=8e8c59beceb4a7f2af1b";
-		url2 = "https://github.com/login/oauth/access_token?client_id=8e8c59beceb4a7f2af1b?client_secret=1e22197f7db85cdee66d30ea156a3d8205adab6b?code=";
-		gmethod = new GetMethod(url1);
-		try {
-			statusCode = client.executeMethod(gmethod);
-			if(statusCode == HttpStatus.SC_OK) {
-				code = gmethod.getResponseHeader("Etag").getValue();
-				code = code.substring(1, code.length()-1);
-				url2 += code;
-				System.out.println(code);
-				System.out.println(url2);
-				pmethod = new PostMethod(url2);
-				pmethod.addRequestHeader("Accept", "application/json");
-				statusCode = client.executeMethod(pmethod);
-					if(statusCode == HttpStatus.SC_OK) {
-						System.out.println(gmethod.getResponseBodyAsString());
-					}else{
-						System.err.println(gmethod.getResponseBodyAsString());
-						//TODO throw new Eception
-					}
-			}else{
-				//TODO throw new Eception
-			}
-		} catch (HttpException e) {
-			// TODO throw new Eception
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO throw new Eception
-			e.printStackTrace();
-		}
-	}
-//	
 	private static Github uniqueGithub = null;
 	private static final int nbOfSavedCommit = 3;
 	float coeff;
@@ -135,7 +94,7 @@ public class Github extends Api{
 		} catch (JSONException e) {
 			System.err.println("JSONArray parsing error : " + temporaryStr);
 		} catch (Exception e) {
-			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") :"+e.getMessage());
+			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") : " + e.getMessage());
 		}
 		/* II. Sélection des commits uniquement */
 		for (int i = 0; i < jsonTemp1.length(); i++) {
@@ -168,7 +127,10 @@ public class Github extends Api{
 						+ repository+"/pom.xml";
 				temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 				temporaryStr.replaceAll(" ", "");
-				if(temporaryStr.contains(Controller.getOldVersion()) && temporaryStr.contains(Controller.getArtefactId())){
+				if(temporaryStr.contains("<version>"+Controller.getOldVersion())
+						&& temporaryStr.contains("<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
+						&& temporaryStr.contains("<groupId>" +Controller.getGroupId()+"</groupId>")
+				){
 					oldVersionFound = true;
 					temporaryStr = "{\"commitAt_t"+-1+"\":\""+jsonTemp2.getJSONObject(i).getString("before")+"\"";
 					temporaryStr += ",\"commitAt_t"+0+"\":\""+jsonTemp2.getJSONObject(i).getString("head")+"\"";
@@ -206,7 +168,6 @@ public class Github extends Api{
 	 * @throws InvalideMethodUrlException 
 	 */
 	protected String getUser(String url) throws InvalideMethodUrlException {
-		//TODO test bad urls
 		int begin, end;
 		String refText="https://github.com/";
 		begin = url.indexOf(refText);
@@ -255,9 +216,10 @@ public class Github extends Api{
 	 * @param user: le propriétaire du projet
 	 * @param repo: le répertoire du projet
 	 * @return la taille en octets du projet si tout se passe bien. Lève une exception sinon.
-	 * @throws Exception
+	 * @throws IOException
+	 * @throws HttpException
 	 */
-	protected int GetProjectSize(String user, String repo) throws Exception{
+	protected int GetProjectSize(String user, String repo) throws IOException, HttpException{
 		int size=0;
 		URL url;
 		URLConnection connection = null;
@@ -267,13 +229,11 @@ public class Github extends Api{
 			connection = url.openConnection();
 			size = connection.getContentLength();
 			if (size < 0){
-				throw new Exception("Could not determine projet size for "+user+"'s repository.");
+				throw new HttpException("Could not determine projet size for "+user+"'s repository.");
 			}
-		} catch (MalformedURLException e) {
-			throw e;
 		} catch (IOException e) {
 			throw e;
-		}finally{
+		} finally{
 			if(connection != null){
 				connection.getInputStream().close();
 			}
@@ -314,6 +274,42 @@ public class Github extends Api{
 	}
 
 	/**
+	 * Gestion de l'authentification de l'application auprès de github
+	 * @param accountIndex : l'index du compt à utilisé. Si un compte est épuisé, l'idée est de basculer sur le second.
+	 * @author BREMARD Corentin
+	 * @return succes : vaut true si tout c'est bien passé
+	 * @throws IdentificationFailledException
+	 */
+	@Override
+	protected boolean authentification(int accountIndex) throws IdentificationFailledException {
+		boolean succes = false;
+		String query = "https://api.github.com/user?access_token=";
+		HttpClient client = new HttpClient();
+		GetMethod gmethod;
+		int statusCode;
+		if(accountIndex>=0 && accountIndex< accesTokens.size()){
+			try {
+				gmethod = new GetMethod(query + accesTokens.get(accountIndex));
+				statusCode = client.executeMethod(gmethod);
+				if (statusCode != HttpStatus.SC_OK) {
+					throw new IdentificationFailledException("Connection failled, try later");
+				}else{
+					maxRequest = Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Limit").getValue());
+					resquestCounter = maxRequest-Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Remaining").getValue());
+					succes = true;
+				}
+			} catch (HttpException e) {
+				throw new IdentificationFailledException("Cannot acces to webservice : " + e);
+			} catch (IOException e) {
+				throw new IdentificationFailledException("Transaction failled : " + e);
+			} catch (NumberFormatException e){
+				throw new IdentificationFailledException("Unexpected result : " + e);
+			}
+		}
+		return succes;
+	}
+
+	/**
 	 * Méthode maître de la classe Github. C'est elle qui calculer le score demandé.
 	 * Cette méthode est sensé être appellée uniquement par la classe stateReady.
 	 * La moindre erreur est gérer de façon à continuer le calculs sur les données restantes. Si aucun calcul n'a aboutie, la méthode retourne un score de 0.
@@ -337,15 +333,16 @@ public class Github extends Api{
 		JSONObject commitInformation  = new JSONObject();
 		JSONObject commit  = new JSONObject();
 		int index, scoreTemp, projectSize;
-		float score;
+		float score, lineWeight;
 		GoogleSearch gs = new GoogleSearch();
 
+		lineWeight = 5609931/2176;
 		// TODO Change next line
 		request = "https://www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
-				+ "&q=%22" +Controller.getGroupId()
-				+ "%22+%22"+Controller.getArtefactId()
-				+ "%22+%22"+Controller.getNewVersion()
+				+ "&q=%22<groupId>" +Controller.getGroupId()+"</groupId>"
+				+ "%22+%22<artifactId>"+Controller.getArtefactId()+"</artifactId>"
+				+ "%22+%22<version>"+Controller.getNewVersion()
 				+ "%22+site:github.com"
 				+ "&ie=utf-8"
 				+ "&oe=utf-8"
@@ -382,22 +379,16 @@ public class Github extends Api{
 		urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CE0QFjAIOBQ&usg=AFQjCNFNDRAKdBX-GzMOiXiQ-l4Xc8rZkg");
 		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
 		
-
-//		for (String url : urls) {
-//			try {
-//				user = getUser(url);
-//				repo = getRepo(url,user);
-//				usersRepos.add(new Pair(user, repo));
-//			} catch (InvalideMethodUrlException e) {
-//				e.getMessage();
-//			}
-//		}
+		for (String url : urls) {
+			try {
+				user = getUser(url);
+				repo = getRepo(url,user);
+				usersRepos.add(new Pair(user, repo));
+			} catch (InvalideMethodUrlException e) {
+				e.getMessage();
+			}
+		}
 		
-		
-		usersRepos.add(new Pair("cbremard", "projetGL"));
-		
-
-
 		/* III. Suppression des couples user/repo en double */
 		Collections.sort(usersRepos, new PairComparator());
 		index=1;
@@ -438,54 +429,36 @@ public class Github extends Api{
 						scoreTemp += informations.getJSONObject(l).getInt("changes");
 					}
 				}
-				// divide scoreTemp by the project's size in order to have the percentage of number of modified lines	
-				projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
+				// divide scoreTemp by the project's size in order to have the percentage of number of modified lines
+				projectSize=0;
+				try{
+					projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
+				} catch (Exception e) {
+					// Une seconde fois car souvent la première plante ;)
+					projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
+				}
 				if(projectSize >0){
 					// In average, a line is 35 octets (it's the case for this document)
-					score += (float) (5609931/2176)*(scoreTemp/projectSize);
+					score += lineWeight*scoreTemp/projectSize;
 				}
-			}catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (Exception e) {
+			} catch (JSONException e) {
+				System.err.println(e.getMessage()+" ("+e+")");
+			} catch (HttpException e) {
+				System.err.println(e.getMessage());
+			} catch (IOException e) {
+				System.err.println("Connection faillure : "+e);
+			} catch (InvalideMethodUrlException e) {
+				System.err.println(e.getMessage());
+			} catch (MaxRequestException e) {
 				System.err.println(e.getMessage());
 			}
 		}
 		// And divide the final score by the number of projects found in order to have the mean.
 		if(commits.length()>0){
-			score = (float) score /commits.length();
+			score = score /commits.length();
 		}else{
 			score = 0;
 		}
 		return score;
-	}
-
-	@Override
-	boolean authentification(int accountIndex) throws IdentificationFailledException {
-		boolean succes = false;
-		String query = "https://api.github.com/user?access_token=";
-		HttpClient client = new HttpClient();
-		GetMethod gmethod;
-		int statusCode;
-		if(accountIndex>=0 && accountIndex< accesTokens.size()){
-			try {
-				gmethod = new GetMethod(query + accesTokens.get(accountIndex));
-				statusCode = client.executeMethod(gmethod);
-				if (statusCode != HttpStatus.SC_OK) {
-					throw new IdentificationFailledException("Connection failled, try later");
-				}else{
-					maxRequest = Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Limit").getValue());
-					resquestCounter = maxRequest-Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Remaining").getValue());
-					succes = true;
-				}
-			} catch (HttpException e) {
-				throw new IdentificationFailledException("Cannot acces to webservice : " + e);
-			} catch (IOException e) {
-				throw new IdentificationFailledException("Transaction failled : " + e);
-			} catch (NumberFormatException e){
-				throw new IdentificationFailledException("Unexpected result : " + e);
-			}
-		}
-		return succes;
 	}
 }

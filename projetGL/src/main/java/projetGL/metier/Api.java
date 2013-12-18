@@ -24,6 +24,7 @@ public abstract class Api extends MethodJunior{
 		super();
 		accesTokens = new ArrayList<String>();
 		accesTokens.add("f3893d75651ca47a2a7fa1b53b6176caf88b49e3"); // cbremard's accces
+		accesTokens.add("5a90a9a5cd81ee0280f3fbda6897e733384288ad"); // Fanny's accces
 		resquestCounter = -1;
 		maxRequest = -1;
 		accountIndex = 0;
@@ -39,7 +40,7 @@ public abstract class Api extends MethodJunior{
 	}
 	
 	abstract protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException;
-	abstract boolean authentification(int accountIndex) throws IdentificationFailledException;
+	abstract protected boolean authentification(int accountIndex) throws IdentificationFailledException;
 	
 	/**
 	 * Gères les requêtes lancées sur les APIs de Github en 3 étapes.
@@ -60,9 +61,12 @@ public abstract class Api extends MethodJunior{
 		int statusCode, maxRequestExpected, resquestCounterExpected;
 		HttpClient client = new HttpClient();
 		GetMethod gmethod;
-		boolean authentifactionSuccessed=  false;
+		boolean authentifactionSuccessed, isApiRequest;
+		String authentifiedRequest, refText;
 		/* I. Gestion des authentifications afin obtenir un plus grand nombre de requête */
+		authentifactionSuccessed = true;
 		if((maxRequest-resquestCounter)<=0){
+			authentifactionSuccessed = false;
 			while(!authentifactionSuccessed && accountIndex<accesTokens.size()){
 				try {
 					authentifactionSuccessed = authentification(accountIndex);
@@ -76,23 +80,32 @@ public abstract class Api extends MethodJunior{
 			throw new MaxRequestException("You reached the maximum of request on Github's API, or the authentification step failled");
 		}
 		/* II. Exécution de la requête et incrémentation du compteur de requête */
-		gmethod = new GetMethod(request);
+		refText = "https://api.github.com/";
+		isApiRequest = (request.substring(0,refText.length()).equals(refText));
+		if(isApiRequest){
+			authentifiedRequest = request+"?access_token="+accesTokens.get(accountIndex);
+			resquestCounter++;
+		}else{
+			authentifiedRequest = request;
+		}
+		gmethod = new GetMethod(authentifiedRequest);
 		statusCode = client.executeMethod(gmethod);
-		resquestCounter++;
 		if (statusCode != HttpStatus.SC_OK) {
-			System.err.print("Unexpected result with URL "+request+" : ");
 			throw new InvalideMethodUrlException(gmethod.getStatusText());
 		}
 		/*III. Vérifications/synchronisation des compteurs de l'application avec les réponses de la requête */
-		maxRequestExpected = Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Limit").getValue());
-		if(maxRequest != maxRequestExpected){
-			System.err.println("The limitation of request is equals to "+maxRequest+" whereas it should be equals to "+maxRequestExpected+" a correction will be done.");
-			maxRequest = maxRequestExpected;
-		}
-		resquestCounterExpected = maxRequest - Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Remaining").getValue());
-		if(resquestCounter != resquestCounterExpected){
-			System.err.println("The request counter is equals to "+resquestCounter+" whereas it should be equals to "+resquestCounterExpected+" a correction will be done.");
-			resquestCounter = resquestCounterExpected;
+		if(isApiRequest){
+			maxRequestExpected = Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Limit").getValue());
+			if(maxRequest != maxRequestExpected){
+				//System.err.println("The limitation of request is equals to "+maxRequest+" whereas it should be equals to "+maxRequestExpected+" a correction will be done.");
+				maxRequest = maxRequestExpected;
+			}
+			resquestCounterExpected = maxRequest - Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Remaining").getValue());
+			if(resquestCounter != resquestCounterExpected){
+				//System.err.println("The request counter is equals to "+resquestCounter+" whereas it should be equals to "+resquestCounterExpected+" a correction will be done.");
+				resquestCounter = resquestCounterExpected;
+			}
+			System.out.println("Github resources state : "+resquestCounter+"/"+maxRequest);
 		}
 		return gmethod;
 	}
