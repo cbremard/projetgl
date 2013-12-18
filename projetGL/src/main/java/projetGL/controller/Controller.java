@@ -50,7 +50,7 @@ public class Controller {
 		return "junit";
 	}
 	
-	public static String getLibrairie() {
+	public static String getArtefactId() {
 		// TODO Auto-generated method stub
 		return "projet";
 	}

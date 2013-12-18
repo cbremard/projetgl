@@ -145,7 +145,7 @@ public class GoogleSearch extends MethodJunior{
 		String request = "https://www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
 				+ "&q=%22"+Controller.getGroupId()
-				+ "%22+%22"+Controller.getLibrairie()
+				+ "%22+%22"+Controller.getArtefactId()
 				+ "%22+%22"+Controller.getNewVersion()+ "%22"
 				+ "&ie=utf-8"
 				+ "&oe=utf-8"

@@ -168,7 +168,7 @@ public class Github extends Api{
 						+ repository+"/pom.xml";
 				temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 				temporaryStr.replaceAll(" ", "");
-				if(temporaryStr.contains(Controller.getOldVersion()) && temporaryStr.contains(Controller.getLibrairie())){
+				if(temporaryStr.contains(Controller.getOldVersion()) && temporaryStr.contains(Controller.getArtefactId())){
 					oldVersionFound = true;
 					temporaryStr = "{\"commitAt_t"+-1+"\":\""+jsonTemp2.getJSONObject(i).getString("before")+"\"";
 					temporaryStr += ",\"commitAt_t"+0+"\":\""+jsonTemp2.getJSONObject(i).getString("head")+"\"";
@@ -343,7 +343,7 @@ public class Github extends Api{
 		// TODO Change next line
 		request = "https://www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
-				+ "&q=%22"+Controller.getLibrairie()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com"
+				+ "&q=%22"+Controller.getArtefactId()+"%22+%22"+Controller.getNewVersion()+"%22+site:github.com"
 				+ "&ie=utf-8"
 				+ "&oe=utf-8"
 				+ "&gws_rd=cr"
