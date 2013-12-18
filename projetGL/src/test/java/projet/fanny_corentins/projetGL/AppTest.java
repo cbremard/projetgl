@@ -1,5 +1,6 @@
 package projet.fanny_corentins.projetGL;
 
+import projetGL.metier.GithubTest;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -25,7 +26,10 @@ public class AppTest
      */
     public static Test suite()
     {
-        return new TestSuite( AppTest.class );
+    	 TestSuite suite= new TestSuite();
+    	 suite.addTestSuite(AppTest.class);
+    	 suite.addTestSuite(GithubTest.class);
+        return suite;
     }
 
     /**
