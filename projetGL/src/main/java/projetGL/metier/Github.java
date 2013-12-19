@@ -389,6 +389,11 @@ public class Github extends Api{
 			}
 		}
 		
+		
+		usersRepos.clear();
+		usersRepos.add(new Pair("cbremard", "projetGL"));
+		
+		
 		/* III. Suppression des couples user/repo en double */
 		Collections.sort(usersRepos, new PairComparator());
 		index=1;
@@ -423,6 +428,20 @@ public class Github extends Api{
 							"/"+commit.getString("repo")+
 							"/compare/"+commit.getString("commitAt_t"+k)+
 							"..."+commit.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
+					
+					// Save commits messages for other methodes
+					//TODO text analysis on the information below
+//					System.out.println("https://api.github.com/repos/"+
+//							commit.getString("user")+
+//							"/"+commit.getString("repo")+
+//							"/compare/"+commit.getString("commitAt_t"+k)+
+//							"..."+commit.getString("commitAt_t"+(k+1))+"");
+//					informations = commitInformation.getJSONArray("commits");
+//					for (int l = 0; l < informations.length(); l++) {
+//						//TODO Save here
+//						System.out.println(informations.getJSONObject(l).getJSONObject("commit").getString("message"));
+//					}
+					
 					informations = commitInformation.getJSONArray("files");
 					// Other loop because sometime, you have more than one commit between two given SHA
 					for (int l = 0; l < informations.length(); l++) {
