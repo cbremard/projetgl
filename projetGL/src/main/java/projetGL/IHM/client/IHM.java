@@ -9,6 +9,7 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Label;
@@ -28,6 +29,10 @@ public class IHM implements EntryPoint {
 	private TextBox artifactField = new TextBox();
 	private TextBox fromVersionField = new TextBox();
 	private TextBox toVersionField = new TextBox();
+	private CheckBox methodeGithub = new CheckBox("Utiliser l'analyse sur Github");
+	private String github = "true";
+	private CheckBox methodeGoogle = new CheckBox("Utiliser la recherche Google");
+	private String google = "true";
 	private Button sendButton = new Button("Calculer");
 	private DialogBox dialogBox = new DialogBox();
 	private Button closeButton = new Button("Fermer");
@@ -38,12 +43,13 @@ public class IHM implements EntryPoint {
 	/**
 	 * This is the entry point method.
 	 */
+	@SuppressWarnings("deprecation")
 	public void onModuleLoad() {
 
-		groupField.setText("groupId");
-		artifactField.setText("artifactId");
-		fromVersionField.setText("fromVersion");
-		toVersionField.setText("toVersion");
+		groupField.setValue("groupId");
+		artifactField.setValue("artifactId");
+		fromVersionField.setValue("fromVersion");
+		toVersionField.setValue("toVersion");
 
 		// Add the fields and Button to the mainPanel
 		// Use RootPanel.get() to get the entire body element
@@ -51,13 +57,15 @@ public class IHM implements EntryPoint {
 		mainPanel.add(artifactField);
 		mainPanel.add(fromVersionField);
 		mainPanel.add(toVersionField);
+		mainPanel.add(methodeGithub);
+		mainPanel.add(methodeGoogle);
 		mainPanel.add(sendButton);
+		mainPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 		
 		RootPanel.get().add(mainPanel);
 
-		// Focus the cursor on the name field when the app loads
-		groupField.setFocus(true);
-		groupField.selectAll();
+		methodeGithub.setChecked(true);
+		methodeGoogle.setChecked(true);
 		
 		// Listen for mouse events on the Calculer button.
 	    sendButton.addClickHandler(new ClickHandler() {
@@ -65,6 +73,23 @@ public class IHM implements EntryPoint {
 	        calculer();
 	      }
 	    });
+	    
+	    methodeGithub.addClickHandler(new ClickHandler() {
+	        public void onClick(ClickEvent event) {
+	          if(((CheckBox) event.getSource()).isChecked())
+	        	  github = "true";
+	          else
+	        	  github = "false";
+	        }
+	      });
+	    methodeGoogle.addClickHandler(new ClickHandler() {
+	        public void onClick(ClickEvent event) {
+	         if(((CheckBox) event.getSource()).isChecked())
+	        	 google = "true";
+	         else
+	        	 google = "false";
+	        }
+	      });
 
 
 		// Create the popup dialog box
@@ -148,15 +173,14 @@ public class IHM implements EntryPoint {
 	      groupField.selectAll();
 	      return;
 	    }
-	    
-	    
-
 	    sendButton.setEnabled(false);
 	    ArrayList<String> params = new ArrayList<String>();
 	    params.add(groupField.getText());
 	    params.add(artifactField.getText());
 	    params.add(fromVersionField.getText());
 	    params.add(toVersionField.getText());
+	    params.add(github);
+	    params.add(google);
 		groupLabel.setText(groupField.getText());
 		serverResponseLabel.setText("");
 		
