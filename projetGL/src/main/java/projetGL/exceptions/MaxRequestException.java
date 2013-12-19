@@ -1,10 +1,10 @@
-package progetGL.exceptions;
+package projetGL.exceptions;
 
-public class IdentificationFailledException extends Exception {
+public class MaxRequestException extends Exception {
 	private static final long serialVersionUID = 1L;
 	private String message;
 
-	public IdentificationFailledException(String message) {
+	public MaxRequestException(String message) {
 		this.message=message;
 	}
 
@@ -15,5 +15,5 @@ public class IdentificationFailledException extends Exception {
 	public void setMessage(String message) {
 		this.message = message;
 	}
-
+	
 }

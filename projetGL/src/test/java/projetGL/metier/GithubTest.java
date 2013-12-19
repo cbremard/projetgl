@@ -2,7 +2,7 @@ package projetGL.metier;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-import progetGL.exceptions.InvalideMethodUrlException;
+import projetGL.exceptions.InvalideMethodUrlException;
 
 
 public class GithubTest extends TestCase{

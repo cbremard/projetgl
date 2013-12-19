@@ -1,4 +1,4 @@
-package progetGL.exceptions;
+package projetGL.exceptions;
 
 public class InvalideMethodUrlException extends Exception {
 	private static final long serialVersionUID = 1L;

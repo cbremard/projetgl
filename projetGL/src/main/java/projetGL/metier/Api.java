@@ -9,10 +9,10 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.json.JSONObject;
 
-import progetGL.exceptions.IdentificationFailledException;
-import progetGL.exceptions.InvalideMethodUrlException;
-import progetGL.exceptions.MaxRequestException;
-import progetGL.exceptions.OldVersionNotFoundException;
+import projetGL.exceptions.IdentificationFailledException;
+import projetGL.exceptions.InvalideMethodUrlException;
+import projetGL.exceptions.MaxRequestException;
+import projetGL.exceptions.OldVersionNotFoundException;
 
 public abstract class Api extends MethodJunior{
 	protected int resquestCounter;
