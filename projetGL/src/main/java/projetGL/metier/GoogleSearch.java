@@ -14,6 +14,11 @@ import projetGL.controller.Controller;
 public class GoogleSearch extends MethodJunior{
 	private static GoogleSearch uniqueGoogle = null;
 	
+	private GoogleSearch(){
+		super();
+	}
+	
+	
 	public static GoogleSearch getInstance(){
 		if (uniqueGoogle==null){
 			uniqueGoogle = new GoogleSearch();

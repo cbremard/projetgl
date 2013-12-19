@@ -5,7 +5,7 @@
 	<groupId>projet.fanny_corentins</groupId>
 	<artifactId>projetGL</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 
 	<name>projetGL</name>
 	<url>http://maven.apache.org</url>
@@ -52,5 +52,11 @@
 			<version>2.6.0-rc1</version>
 			<type>pom</type>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-core</artifactId>
+			<version>4.6.0</version>
+		</dependency>
+		
 	</dependencies>
 </project>
