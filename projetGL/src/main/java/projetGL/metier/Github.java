@@ -334,7 +334,7 @@ public class Github extends Api{
 		JSONObject commit  = new JSONObject();
 		int index, scoreTemp, projectSize;
 		float score, lineWeight;
-		GoogleSearch gs = new GoogleSearch();
+		GoogleSearch gs = GoogleSearch.getInstance();
 
 		lineWeight = 5609931/2176;
 		// TODO Change next line
@@ -378,6 +378,7 @@ public class Github extends Api{
 		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:D2_mfqBYiqwJ:https://github.com/pthurotte/testDevCloud/blob/master/appSuiviExploit-webapp/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CEsQIDAHOBQ&usg=AFQjCNFnGuSOd9rgqxyNjG26RTlKMGlHUw");
 		urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CE0QFjAIOBQ&usg=AFQjCNFNDRAKdBX-GzMOiXiQ-l4Xc8rZkg");
 		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
+		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/cbremard/projetGL/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
 		
 		for (String url : urls) {
 			try {
@@ -388,10 +389,6 @@ public class Github extends Api{
 				e.getMessage();
 			}
 		}
-		
-		
-		usersRepos.clear();
-		usersRepos.add(new Pair("cbremard", "projetGL"));
 		
 		
 		/* III. Suppression des couples user/repo en double */
@@ -406,6 +403,7 @@ public class Github extends Api{
 		}	
 
 		/* IV. Récupération des commits */
+		// Boucle sur chaque couple user-repository
 		for (int i = 0; i < usersRepos.size(); i++) {
 			try {
 				commits.put(getCommit(usersRepos.get(i).getLeft(), usersRepos.get(i).getRight()));
