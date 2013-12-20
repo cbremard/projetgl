@@ -22,7 +22,7 @@ import projetGL.exceptions.OldVersionNotFoundException;
 
 public class Github extends Api{
 	private static Github uniqueGithub = null;
-	private static final int nbOfSavedCommit = 3;
+	private static final int nbOfAnalysedCommits = 3; // Nombre de commits à analyser pour trouver le nombre de lignes modifiées suite à un changement de versions
 	float coeff;
 
 
@@ -83,7 +83,7 @@ public class Github extends Api{
 	@Override
 	protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException {
 		JSONObject jsonsResult = new JSONObject();
-		JSONArray jsonTemp1 = new JSONArray();
+		JSONArray jsonTemp1 = new JSONArray(); // Tableaux de Json
 		JSONArray jsonTemp2 = new JSONArray();
 		String temporaryStr = "";
 		boolean haveBeforeParam, oldVersionFound = false;
@@ -120,6 +120,7 @@ public class Github extends Api{
 		//Start at 1 because the newer commit (index==0) have the new librarie
 		for (int i = 0+1; i < jsonTemp2.length(); i++) {
 			try {
+				// Adresse à requêter pour trouver le pom.xml de la version cherchée
 				temporaryStr ="https://raw.github.com/"
 						+ user+"/"
 						+ repository+"/"
@@ -127,14 +128,14 @@ public class Github extends Api{
 						+ repository+"/pom.xml";
 				temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 				temporaryStr.replaceAll(" ", "");
-				if(temporaryStr.contains("<version>"+Controller.getOldVersion())
+				if(temporaryStr.contains("<version>"+Controller.getOldVersion()+"</version>")
 						&& temporaryStr.contains("<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
 						&& temporaryStr.contains("<groupId>" +Controller.getGroupId()+"</groupId>")
 				){
 					oldVersionFound = true;
 					temporaryStr = "{\"commitAt_t"+-1+"\":\""+jsonTemp2.getJSONObject(i).getString("before")+"\"";
 					temporaryStr += ",\"commitAt_t"+0+"\":\""+jsonTemp2.getJSONObject(i).getString("head")+"\"";
-					for (int j = 1; j < nbOfSavedCommit; j++) {
+					for (int j = 1; j < nbOfAnalysedCommits; j++) {
 						temporaryStr += ",\"commitAt_t"+j+"\":\"";
 						if(i-j>=0){
 							temporaryStr += jsonTemp2.getJSONObject(i-j).getString("head");
@@ -154,6 +155,8 @@ public class Github extends Api{
 				System.err.println(e.getMessage());
 			}
 		}
+		
+		// Si aucune des versions du projet ne contient la "OldVersion" de la librairie recherchée
 		if(!oldVersionFound){
 			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") don't use the old version.");
 		}
@@ -342,7 +345,7 @@ public class Github extends Api{
 				+ "&channel=fs"
 				+ "&q=%22<groupId>" +Controller.getGroupId()+"</groupId>"
 				+ "%22+%22<artifactId>"+Controller.getArtefactId()+"</artifactId>"
-				+ "%22+%22<version>"+Controller.getNewVersion()
+				+ "%22+%22<version>"+Controller.getNewVersion()+"</version>"
 				+ "%22+site:github.com"
 				+ "&ie=utf-8"
 				+ "&oe=utf-8"
@@ -420,25 +423,27 @@ public class Github extends Api{
 				commit = commits.getJSONObject(j);
 				scoreTemp = 0;
 				// Loop on each commit of the given project
-				for (int k = -1; k < nbOfSavedCommit-1; k++) {
+				for (int k = -1; k < nbOfAnalysedCommits-1; k++) {
 					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
 							commit.getString("user")+
 							"/"+commit.getString("repo")+
 							"/compare/"+commit.getString("commitAt_t"+k)+
 							"..."+commit.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
 					
+					//System.out.println(commitInformation.toString());
+					
 					// Save commits messages for other methodes
-					//TODO text analysis on the information below
-//					System.out.println("https://api.github.com/repos/"+
-//							commit.getString("user")+
-//							"/"+commit.getString("repo")+
-//							"/compare/"+commit.getString("commitAt_t"+k)+
-//							"..."+commit.getString("commitAt_t"+(k+1))+"");
-//					informations = commitInformation.getJSONArray("commits");
-//					for (int l = 0; l < informations.length(); l++) {
-//						//TODO Save here
-//						System.out.println(informations.getJSONObject(l).getJSONObject("commit").getString("message"));
-//					}
+					// Affichage requête
+					System.out.println("https://api.github.com/repos/"+
+							commit.getString("user")+
+							"/"+commit.getString("repo")+
+							"/compare/"+commit.getString("commitAt_t"+k)+
+							"..."+commit.getString("commitAt_t"+(k+1))+"");
+					informations = commitInformation.getJSONArray("commits");
+					for (int l = 0; l < informations.length(); l++) {
+						//TODO TEXT MINING SUR COMMENTAIRES
+						System.out.println(informations.getJSONObject(l).getJSONObject("commit").getString("message"));
+					}
 					
 					informations = commitInformation.getJSONArray("files");
 					// Other loop because sometime, you have more than one commit between two given SHA
