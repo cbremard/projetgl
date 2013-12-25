@@ -440,10 +440,12 @@ public class Github extends Api{
 							"/compare/"+commit.getString("commitAt_t"+k)+
 							"..."+commit.getString("commitAt_t"+(k+1))+"");
 					informations = commitInformation.getJSONArray("commits");
-					for (int l = 0; l < informations.length(); l++) {
-						//TODO TEXT MINING SUR COMMENTAIRES
-						System.out.println(informations.getJSONObject(l).getJSONObject("commit").getString("message"));
-					}
+					
+//					for (int l = 0; l < informations.length(); l++) {
+//						//TODO TEXT MINING SUR COMMENTAIRES
+//						
+//						System.out.println(informations.getJSONObject(l).getJSONObject("commit").getString("message"));
+//					}
 					
 					informations = commitInformation.getJSONArray("files");
 					// Other loop because sometime, you have more than one commit between two given SHA
@@ -451,7 +453,7 @@ public class Github extends Api{
 						scoreTemp += informations.getJSONObject(l).getInt("changes");
 					}
 				}
-				// divide scoreTemp by the project's size in order to have the percentage of number of modified lines
+				// divide scoreTemp by the project's size in order to have the percentage of modified lines
 				projectSize=0;
 				try{
 					projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
