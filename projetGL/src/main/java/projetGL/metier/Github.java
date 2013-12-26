@@ -330,12 +330,16 @@ public class Github extends Api{
 		/* I. Initiation des variables */
 		String request, endURL, temp, user, repo;
 		ArrayList<String> urls = new ArrayList<String>();
-		ArrayList<Pair> usersRepos = new ArrayList<Pair>();
+		ArrayList<Pair_object> projects = new ArrayList<Pair_object>();
+		ArrayList<Pair_String> users_repos = new ArrayList<Pair_String>();
 		JSONArray commits = new JSONArray();
 		JSONArray informations = new JSONArray();
 		JSONObject commitInformation  = new JSONObject();
+		//JSONObject commitss  = new JSONObject();
 		JSONObject commit  = new JSONObject();
 		int index, scoreTemp, projectSize;
+		float score_project=0;
+		Pair_String user_repo;
 		float score, lineWeight;
 		GoogleSearch gs = GoogleSearch.getInstance();
 
@@ -387,36 +391,134 @@ public class Github extends Api{
 			try {
 				user = getUser(url);
 				repo = getRepo(url,user);
-				usersRepos.add(new Pair(user, repo));
+				user_repo = new Pair_String(user, repo);
+				users_repos.add(user_repo);	// Liste des couples user-repository pour obtenir chaque projet
 			} catch (InvalideMethodUrlException e) {
 				e.getMessage();
 			}
 		}
 		
 		
-		/* III. Suppression des couples user/repo en double */
-		Collections.sort(usersRepos, new PairComparator());
+		/* III. Suppression des couples user-repo en double */
+		Collections.sort(users_repos, new PairComparator());
 		index=1;
-		while(index < usersRepos.size()) {
-			if(usersRepos.get(index-1).equals(usersRepos.get(index))){
-				usersRepos.remove(index);
+		while(index < users_repos.size()) {
+			if(users_repos.get(index-1).equals(users_repos.get(index))){
+				users_repos.remove(index);
 			}else{
 				index++;
 			}
 		}	
-
+			
+				
 		/* IV. Récupération des commits */
 		// Boucle sur chaque couple user-repository
-		for (int i = 0; i < usersRepos.size(); i++) {
-			try {
-				commits.put(getCommit(usersRepos.get(i).getLeft(), usersRepos.get(i).getRight()));
-			} catch (OldVersionNotFoundException e) {
-				System.err.println(e.getMessage());
-			}
+
+		
+//		JSONObject detail_commit = new JSONObject();
+//		Pair_object commit_score;
+//		Pair_object project;
+//		
+		/* IV. Récupération des commits */
+//		for (int i = 0; i < users_repos.size(); i++) {
+//			try {
+//				detail_commit = getCommit(users_repos.get(i).getLeft(), users_repos.get(i).getRight());
+//				commit_score = new Pair_object(detail_commit, score_project);
+//				project = new Pair_object(users_repos.get(i), commit_score);
+//				projects.add(project);
+//			} catch (OldVersionNotFoundException e) {
+//				System.err.println(e.getMessage());
+//			}
+//		}
+		
+		for (int i = 0; i < users_repos.size(); i++) {
+		try {
+			commits.put(getCommit(users_repos.get(i).getLeft(), users_repos.get(i).getRight()));
+		} catch (OldVersionNotFoundException e) {
+			System.err.println(e.getMessage());
 		}
+	}
 		
 		/* V. Récupération de la taille des commits et construction du score final */
 		score=0;
+		
+// commits est un JSONArray		
+		// Loop on all projets found
+//		Pair_object p;
+//		for (Pair_object proj : projects) {
+//			try {
+//				p = (Pair_object) proj.getRight();
+//				commitss = (JSONObject) p.getLeft();
+//				scoreTemp = 0;
+//				// Loop on each commit of the given project
+//				for (int k = -1; k < nbOfAnalysedCommits-1; k++) {
+//					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
+//							commitss.getString("user")+
+//							"/"+commitss.getString("repo")+
+//							"/compare/"+commitss.getString("commitAt_t"+k)+
+//							"..."+commitss.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
+//					// Affichage requête
+//					System.out.println("https://api.github.com/repos/"+
+//							commitss.getString("user")+
+//							"/"+commitss.getString("repo")+
+//							"/compare/"+commitss.getString("commitAt_t"+k)+
+//							"..."+commitss.getString("commitAt_t"+(k+1))+"");
+//					informations = commitInformation.getJSONArray("commits");
+//					
+//					// Affichage résultat
+//					//System.out.println(commitInformation.toString());
+//					
+//					// Save commits messages for other methodes
+////					for (int l = 0; l < informations.length(); l++) {
+////						//TODO TEXT MINING SUR COMMENTAIRES
+////						
+////						System.out.println(informations.getJSONObject(l).getJSONObject("commit").getString("message"));
+////					}
+//					
+//					informations = commitInformation.getJSONArray("files");
+//					// Other loop because sometime, you have more than one commit between two given SHA
+//					for (int l = 0; l < informations.length(); l++) {
+//						scoreTemp += informations.getJSONObject(l).getInt("changes");
+//					}
+//				}
+//				// divide scoreTemp by the project's size in order to have the percentage of modified lines
+//				projectSize=0;
+//				try{
+//					projectSize = GetProjectSize(commitss.getString("user"),commitss.getString("repo"));
+//				} catch (Exception e) {
+//					// Une seconde fois car souvent la première plante ;)
+//					projectSize = GetProjectSize(commitss.getString("user"),commitss.getString("repo"));
+//				}
+//				if(projectSize >0){
+//					// In average, a line is 35 octets (it's the case for this document)
+//					score += lineWeight*scoreTemp/projectSize;
+//				}
+//			} catch (JSONException e) {
+//				System.err.println(e.getMessage()+" ("+e+")");
+//			} catch (HttpException e) {
+//				System.err.println(e.getMessage());
+//			} catch (IOException e) {
+//				System.err.println("Connection faillure : "+e);
+//			} catch (InvalideMethodUrlException e) {
+//				System.err.println(e.getMessage());
+//			} catch (MaxRequestException e) {
+//				System.err.println(e.getMessage());
+//			}
+//		}
+//		// And divide the final score by the number of projects found in order to have the mean.
+//		if(commits.length()>0){
+//			score = score /commits.length();
+//		}else{
+//			score = 0;
+//		}
+//		return score;
+//	}
+		
+		
+//		/* V. Récupération de la taille des commits et construction du score final */
+		score=0;
+		
+		// commits est un JSONArray		
 		// Loop on all projets found
 		for (int j = 0; j < commits.length(); j++) {
 			try {

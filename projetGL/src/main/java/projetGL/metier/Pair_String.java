@@ -1,10 +1,10 @@
 package projetGL.metier;
 
 
-public class Pair{
+public class Pair_String{
 	private String left;
 	private String right;
-	public Pair(String left, String right) {
+	public Pair_String(String left, String right) {
 		super();
 		this.left = left;
 		this.right = right;
@@ -21,7 +21,7 @@ public class Pair{
 	public void setRight(String right) {
 		this.right = right;
 	}
-	public boolean equals(Pair pair){
+	public boolean equals(Pair_String pair){
 	   return (left.equals(pair.getLeft()) && right.equals(pair.getRight()));
 	}
 }

@@ -11,10 +11,10 @@ import projetGL.metier.TextMining;
  */
 public class Main {
 	public static void main( String[] args ){
-//		Controller c = new Controller();
-//		c.init();
-//		c.run();
+		Controller c = new Controller();
+		c.init();
+		c.run();
 		
-		TextMining.analyseComment();
+//		TextMining.analyseComment();
 	}
 }

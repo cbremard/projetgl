@@ -2,10 +2,10 @@ package projetGL.metier;
 
 import java.util.Comparator;
 
-public class PairComparator implements Comparator<Pair>{
+public class PairComparator implements Comparator<Pair_String>{
 	/* cf. http://www.javabeat.net/sorting-custom-types-in-java/ */
 
-	public int compare(Pair pair1, Pair pair2) {
+	public int compare(Pair_String pair1, Pair_String pair2) {
 		int result;
 		result = pair1.getLeft().compareTo(pair2.getLeft());
 		if( result == 0 ){
