@@ -128,7 +128,7 @@ public class GoogleSearch extends MethodJunior{
 	 * @author fanny
 	 * @return result: le score généré par la méthode
 	 */
-	public float calcul_score_gs() {
+	public float calcul_score() {
 		try {
 			state.compute(this);
 		} catch (Exception e) {

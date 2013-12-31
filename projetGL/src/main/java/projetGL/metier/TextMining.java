@@ -168,7 +168,7 @@ public class TextMining {
 			for(ScoreDoc scoredoc: scoreDocArray){
 				proj = new GithubProject();
 				proj.setScore_comments(scoredoc.score);
-				//System.out.println("Score : " + scoredoc.score);
+				System.out.println("Score : " + scoredoc.score);
 				// Retourne le document et affiche les détails
 				docId = scoredoc.doc;
 				Document d = indexSearcher.doc(docId);
