@@ -22,8 +22,9 @@ import projetGL.exceptions.OldVersionNotFoundException;
 
 public class Github extends Api{
 	private static Github uniqueGithub = null;
-	private static final int nbOfAnalysedCommits = 3; // Nombre de commits à analyser pour trouver le nombre de lignes modifiées suite à un changement de versions
-	float coeff;
+	private static final int nbOfAnalysedCommits = 3; // Nombre de commits à analyser pour trouver le nombre de lignes modifiées suite à un changement de version
+	private float coeff;
+	private float score;
 
 
 	/**
@@ -32,6 +33,7 @@ public class Github extends Api{
 	 */
 	private Github() {
 		super();
+		this.score = 0;
 	}
 
 	/**
@@ -47,27 +49,40 @@ public class Github extends Api{
 	}
 
 	/**
-	 * getScore() lance un appel pour le calcul du score.
-	 * Cette méthode doit être appellé pour le calcul du score.
+	 * @return le score de l'instance Github
+	 */
+	@Override
+	public float getScore() {
+		return Github.getInstance().score;
+	}
+	
+	/**
+	 * Méthode set pour modifier la valeur Score de l'instance Github
+	 * @param _score
+	 */
+	public void setScore(float _score){
+		Github.getInstance().score = _score;
+	}
+
+	/**
+	 * calcul_score_git() lance un appel à compute() pour le calcul du score.
 	 * Les différents cas d'utilisation sont gérés via le paramètre state.
 	 * @author BREMARD Corentin
 	 * @return result: le score généré par la méthode
 	 */
-	@Override
-	public float getScore() {
-		float result = 0;
+	public float calcul_score_git() {
 		try {
-			result = state.compute(this);
+			state.compute(this);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			System.out.println("The score will have a value of 0.");
 		}
-		if(score>0){
+		if(GoogleSearch.getInstance().getScore()>0){
 			state = new StateSuccess();
 		}else{
 			state = new StateFailure();
 		}
-		return result;
+		return GoogleSearch.getInstance().getScore();
 	}
 
 	/**
@@ -83,11 +98,12 @@ public class Github extends Api{
 	@Override
 	protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException {
 		JSONObject jsonsResult = new JSONObject();
-		JSONArray jsonTemp1 = new JSONArray(); // Tableaux de Json
+		JSONArray jsonTemp1 = new JSONArray(); // Tableau de Json
 		JSONArray jsonTemp2 = new JSONArray();
 		String temporaryStr = "";
 		boolean haveBeforeParam, oldVersionFound = false;
-		/* I. Récupération de tous les événnements liés au répertoire donné */
+		
+		/* I. Récupération de tous les évènements liés au répertoire donné */
 		try {
 			temporaryStr = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/events");
 			jsonTemp1 = new JSONArray(temporaryStr);
@@ -96,6 +112,7 @@ public class Github extends Api{
 		} catch (Exception e) {
 			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") : " + e.getMessage());
 		}
+		
 		/* II. Sélection des commits uniquement */
 		for (int i = 0; i < jsonTemp1.length(); i++) {
 			haveBeforeParam = false;
@@ -131,7 +148,7 @@ public class Github extends Api{
 				if(temporaryStr.contains("<version>"+Controller.getOldVersion()+"</version>")
 						&& temporaryStr.contains("<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
 						&& temporaryStr.contains("<groupId>" +Controller.getGroupId()+"</groupId>")
-				){
+						){
 					oldVersionFound = true;
 					temporaryStr = "{\"commitAt_t"+-1+"\":\""+jsonTemp2.getJSONObject(i).getString("before")+"\"";
 					temporaryStr += ",\"commitAt_t"+0+"\":\""+jsonTemp2.getJSONObject(i).getString("head")+"\"";
@@ -155,7 +172,7 @@ public class Github extends Api{
 				System.err.println(e.getMessage());
 			}
 		}
-		
+
 		// Si aucune des versions du projet ne contient la "OldVersion" de la librairie recherchée
 		if(!oldVersionFound){
 			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") don't use the old version.");
@@ -167,7 +184,7 @@ public class Github extends Api{
 	 * Retourne l'utilisateur présent dans une URL github
 	 * @author BREMARD Corentin
 	 * @param url: l'URL à analyser
-	 * @return Le speudo de l'utilisateur recherché si l'URL est correcte. Lève une erreur sinon.
+	 * @return Le pseudo de l'utilisateur recherché si l'URL est correcte. Lève une erreur sinon.
 	 * @throws InvalideMethodUrlException 
 	 */
 	protected String getUser(String url) throws InvalideMethodUrlException {
@@ -175,12 +192,12 @@ public class Github extends Api{
 		String refText="https://github.com/";
 		begin = url.indexOf(refText);
 		if(begin<0){
-			throw new InvalideMethodUrlException("Impossible to extract an user from "+url);
+			throw new InvalideMethodUrlException("Impossible to extract user from "+url);
 		}else{
 			begin += refText.length();
 			end = url.substring(begin).indexOf("/");
 			if (end<0){
-				throw new InvalideMethodUrlException("Impossible to extract an user from "+url);
+				throw new InvalideMethodUrlException("Impossible to extract user from "+url);
 			}else{
 				end += begin;
 			}
@@ -192,7 +209,8 @@ public class Github extends Api{
 	 * Retourne le répertoire présent dans une URL github pour un utilisateur donné
 	 * @author BREMARD Corentin
 	 * @param url: l'URL à analyser
-	 * @return Le nom du répertoire de l'utilisateur recherché si l'URL est correcte. Lève une erreur sinon.
+	 * @param user : le propriétaire du repository recherché
+	 * @return Le nom du répertoire recherché si l'URL est correcte. Lève une erreur sinon.
 	 * @throws InvalideMethodUrlException 
 	 */
 	protected String getRepo(String url, String user) throws InvalideMethodUrlException {
@@ -200,21 +218,21 @@ public class Github extends Api{
 		String refText="https://github.com/" + user + "/";
 		begin = url.indexOf(refText);
 		if(begin<0){
-			throw new InvalideMethodUrlException("Impossible to extract the "+user+"'s repository from "+url);
+			throw new InvalideMethodUrlException("Impossible to extract "+user+"'s repository from "+url);
 		}else{    			
 			begin += refText.length();
 			end = url.substring(begin).indexOf("/");
 			if(end<0){
-				throw new InvalideMethodUrlException("Impossible to extract the "+user+"'s repository from "+url);
+				throw new InvalideMethodUrlException("Impossible to extract "+user+"'s repository from "+url);
 			}else{
 				end += begin;
 			}
 		}
 		return url.substring(begin, end);
 	}
-	
+
 	/**
-	 * Permet d'obtenir la taille en octets d'un répertoire d'un utilisateur.
+	 * Permet d'obtenir la taille en octets d'un répertoire pour un utilisateur.
 	 * @author BREMARD Corentin
 	 * @param user: le propriétaire du projet
 	 * @param repo: le répertoire du projet
@@ -232,7 +250,7 @@ public class Github extends Api{
 			connection = url.openConnection();
 			size = connection.getContentLength();
 			if (size < 0){
-				throw new HttpException("Could not determine projet size for "+user+"'s repository.");
+				throw new HttpException("Impossible to determine projet size for "+user+"'s repository.");
 			}
 		} catch (IOException e) {
 			throw e;
@@ -243,12 +261,13 @@ public class Github extends Api{
 		}
 		return size;
 	}
-	
+
 	/**
-	 * Les requêtes github qui retourne plusieurs objects sont limités à 30 objets par réponses par défaut. Cette méthode permet de récupérer l'ensemble des résultats.
-	 * Cette méthode surcharge la méthode mère sendRequest(String request)
+	 * Les requêtes github qui retournent plusieurs objects sont limitées par défaut, à 30 objets par réponse.
+	 * Cette méthode permet de récupérer l'ensemble des résultats.
+	 * Elle surcharge la méthode mère sendRequest(String request)
 	 * @author BREMARD corentin
-	 * @param request : l'url générale qui permet d'affiche la première page de résultats
+	 * @param request : l'url générale qui permet d'afficher la première page de résultats
 	 * @throws MaxRequestException 
 	 * @throws IOException 
 	 * @throws InvalideMethodUrlException 
@@ -258,7 +277,7 @@ public class Github extends Api{
 	protected String sendMultiPagesRequest(String request) throws HttpException, InvalideMethodUrlException, IOException, MaxRequestException{
 		String finalResult, UriNextPage, linkResponse, bodyResponse;
 		GetMethod gmethod;
-		
+
 		finalResult = "[";
 		UriNextPage = request;
 		while(UriNextPage != null && UriNextPage.length()>0){
@@ -278,9 +297,9 @@ public class Github extends Api{
 
 	/**
 	 * Gestion de l'authentification de l'application auprès de github
-	 * @param accountIndex : l'index du compt à utilisé. Si un compte est épuisé, l'idée est de basculer sur le second.
+	 * @param accountIndex : l'index du compte à utiliser. Si un compte est épuisé, l'idée est de basculer sur le second.
 	 * @author BREMARD Corentin
-	 * @return succes : vaut true si tout c'est bien passé
+	 * @return succes : vaut true si tout s'est bien passé
 	 * @throws IdentificationFailledException
 	 */
 	@Override
@@ -313,37 +332,39 @@ public class Github extends Api{
 	}
 
 	/**
-	 * Méthode maître de la classe Github. C'est elle qui calculer le score demandé.
-	 * Cette méthode est sensé être appellée uniquement par la classe stateReady.
-	 * La moindre erreur est gérer de façon à continuer le calculs sur les données restantes. Si aucun calcul n'a aboutie, la méthode retourne un score de 0.
-	 * l'éxécution se fait en 5 étapes:
-	 *    I. Initiation des variables
+	 * Méthode maître de la classe Github. C'est elle qui calcule le score demandé.
+	 * Cette méthode est censée être appellée uniquement par la classe stateReady.
+	 * La moindre erreur est gérée de façon à continuer le calcul sur les données restantes.
+	 * Si aucun calcul n'a abouti, la méthode retourne un score de 0.
+	 * L'exécution se fait en 5 étapes:
+	 *    I. Initialisation des variables
 	 *    II. Récupération des utilisateurs et répertoires via une recherche Google
 	 *    III. Suppression des couples user/repo en double
 	 *    IV. Récupération des commits
 	 *    V. Récupération de la taille des commits et construction du score final
 	 * @author BREMARD Corentin
-	 * @return le score du modèle
 	 */
-	public float compute() {
+	public void compute() {
 		state = new StateRunning();
-		/* I. Initiation des variables */
-		String request, endURL, temp, user, repo;
+
+
+		/* I. Initialisation des variables */
+		String request, endURL, user, repo;
 		ArrayList<String> urls = new ArrayList<String>();
-		ArrayList<Pair_object> projects = new ArrayList<Pair_object>();
+		ArrayList<GithubProject> projects = new ArrayList<GithubProject>();
+		GithubProject project;
+		JSONObject detail_commit = new JSONObject();
+
+		TextMining tMining;
 		ArrayList<Pair_String> users_repos = new ArrayList<Pair_String>();
-		JSONArray commits = new JSONArray();
-		JSONArray informations = new JSONArray();
-		JSONObject commitInformation  = new JSONObject();
-		//JSONObject commitss  = new JSONObject();
-		JSONObject commit  = new JSONObject();
-		int index, scoreTemp, projectSize;
-		float score_project=0;
+		JSONArray commit_infos = new JSONArray();
+		JSONObject compare_commits  = new JSONObject();
+		int index;
 		Pair_String user_repo;
-		float score, lineWeight;
+		float lineWeight;
 		GoogleSearch gs = GoogleSearch.getInstance();
 
-		lineWeight = 5609931/2176;
+		lineWeight = 5609931/2176; // TODO : what's this ?
 		// TODO Change next line
 		request = "https://www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
@@ -358,7 +379,7 @@ public class Github extends Api{
 		endURL = "pom.xml";
 
 		/* II. Récupération des utilisateurs et répertoires via une recherche Google */
-//		urls = gs.getUrlResult(request,endURL);
+		//		urls = gs.getUrlResult(request,endURL);
 		urls.add("/url?q=https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCgQFjAB&usg=AFQjCNHq7BRpDuU7pkkMpz7RvOziAEX08w");
 		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:c3D7xLADygcJ:https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCsQIDAB&usg=AFQjCNHLUJ5QLu95jT6aLpAjvxUlb6d2og");
 		urls.add("/url?q=https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CC0QFjAC&usg=AFQjCNHoZLLKtuutPbal6KX0OmmomYRapw");
@@ -386,7 +407,8 @@ public class Github extends Api{
 		urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CE0QFjAIOBQ&usg=AFQjCNFNDRAKdBX-GzMOiXiQ-l4Xc8rZkg");
 		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
 		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/cbremard/projetGL/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
-		
+
+		/* Récupération des couples user-repo */
 		for (String url : urls) {
 			try {
 				user = getUser(url);
@@ -394,11 +416,11 @@ public class Github extends Api{
 				user_repo = new Pair_String(user, repo);
 				users_repos.add(user_repo);	// Liste des couples user-repository pour obtenir chaque projet
 			} catch (InvalideMethodUrlException e) {
-				e.getMessage();
+				System.err.println(e.getMessage());
 			}
 		}
-		
-		
+
+
 		/* III. Suppression des couples user-repo en double */
 		Collections.sort(users_repos, new PairComparator());
 		index=1;
@@ -409,163 +431,62 @@ public class Github extends Api{
 				index++;
 			}
 		}	
-			
-				
+
+
 		/* IV. Récupération des commits */
 		// Boucle sur chaque couple user-repository
-
-		
-//		JSONObject detail_commit = new JSONObject();
-//		Pair_object commit_score;
-//		Pair_object project;
-//		
-		/* IV. Récupération des commits */
-//		for (int i = 0; i < users_repos.size(); i++) {
-//			try {
-//				detail_commit = getCommit(users_repos.get(i).getLeft(), users_repos.get(i).getRight());
-//				commit_score = new Pair_object(detail_commit, score_project);
-//				project = new Pair_object(users_repos.get(i), commit_score);
-//				projects.add(project);
-//			} catch (OldVersionNotFoundException e) {
-//				System.err.println(e.getMessage());
-//			}
-//		}
-		
-		for (int i = 0; i < users_repos.size(); i++) {
-		try {
-			commits.put(getCommit(users_repos.get(i).getLeft(), users_repos.get(i).getRight()));
-		} catch (OldVersionNotFoundException e) {
-			System.err.println(e.getMessage());
-		}
-	}
-		
-		/* V. Récupération de la taille des commits et construction du score final */
-		score=0;
-		
-// commits est un JSONArray		
-		// Loop on all projets found
-//		Pair_object p;
-//		for (Pair_object proj : projects) {
-//			try {
-//				p = (Pair_object) proj.getRight();
-//				commitss = (JSONObject) p.getLeft();
-//				scoreTemp = 0;
-//				// Loop on each commit of the given project
-//				for (int k = -1; k < nbOfAnalysedCommits-1; k++) {
-//					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
-//							commitss.getString("user")+
-//							"/"+commitss.getString("repo")+
-//							"/compare/"+commitss.getString("commitAt_t"+k)+
-//							"..."+commitss.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
-//					// Affichage requête
-//					System.out.println("https://api.github.com/repos/"+
-//							commitss.getString("user")+
-//							"/"+commitss.getString("repo")+
-//							"/compare/"+commitss.getString("commitAt_t"+k)+
-//							"..."+commitss.getString("commitAt_t"+(k+1))+"");
-//					informations = commitInformation.getJSONArray("commits");
-//					
-//					// Affichage résultat
-//					//System.out.println(commitInformation.toString());
-//					
-//					// Save commits messages for other methodes
-////					for (int l = 0; l < informations.length(); l++) {
-////						//TODO TEXT MINING SUR COMMENTAIRES
-////						
-////						System.out.println(informations.getJSONObject(l).getJSONObject("commit").getString("message"));
-////					}
-//					
-//					informations = commitInformation.getJSONArray("files");
-//					// Other loop because sometime, you have more than one commit between two given SHA
-//					for (int l = 0; l < informations.length(); l++) {
-//						scoreTemp += informations.getJSONObject(l).getInt("changes");
-//					}
-//				}
-//				// divide scoreTemp by the project's size in order to have the percentage of modified lines
-//				projectSize=0;
-//				try{
-//					projectSize = GetProjectSize(commitss.getString("user"),commitss.getString("repo"));
-//				} catch (Exception e) {
-//					// Une seconde fois car souvent la première plante ;)
-//					projectSize = GetProjectSize(commitss.getString("user"),commitss.getString("repo"));
-//				}
-//				if(projectSize >0){
-//					// In average, a line is 35 octets (it's the case for this document)
-//					score += lineWeight*scoreTemp/projectSize;
-//				}
-//			} catch (JSONException e) {
-//				System.err.println(e.getMessage()+" ("+e+")");
-//			} catch (HttpException e) {
-//				System.err.println(e.getMessage());
-//			} catch (IOException e) {
-//				System.err.println("Connection faillure : "+e);
-//			} catch (InvalideMethodUrlException e) {
-//				System.err.println(e.getMessage());
-//			} catch (MaxRequestException e) {
-//				System.err.println(e.getMessage());
-//			}
-//		}
-//		// And divide the final score by the number of projects found in order to have the mean.
-//		if(commits.length()>0){
-//			score = score /commits.length();
-//		}else{
-//			score = 0;
-//		}
-//		return score;
-//	}
-		
-		
-//		/* V. Récupération de la taille des commits et construction du score final */
-		score=0;
-		
-		// commits est un JSONArray		
-		// Loop on all projets found
-		for (int j = 0; j < commits.length(); j++) {
+		for (Pair_String pair_user_repo : users_repos) {
 			try {
-				commit = commits.getJSONObject(j);
-				scoreTemp = 0;
-				// Loop on each commit of the given project
+				detail_commit = getCommit(pair_user_repo.getLeft(), pair_user_repo.getRight());
+				project = new GithubProject(pair_user_repo.getLeft(), pair_user_repo.getRight(), detail_commit);
+				projects.add(project);
+			} catch (OldVersionNotFoundException e) {
+				System.err.println(e.getMessage());
+			}
+		}
+
+
+		/* V. Récupération de la taille des commits et construction du score final */
+		// Boucle sur chaque projet
+		for (GithubProject proj : projects) {
+			try {
+				// Boucle sur chacun des 3 (=nbOfAnalysedCommits) commits que l'on veut analyser
 				for (int k = -1; k < nbOfAnalysedCommits-1; k++) {
-					commitInformation = new JSONObject(sendRequest("https://api.github.com/repos/"+
-							commit.getString("user")+
-							"/"+commit.getString("repo")+
-							"/compare/"+commit.getString("commitAt_t"+k)+
-							"..."+commit.getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
-					
-					//System.out.println(commitInformation.toString());
-					
-					// Save commits messages for other methodes
+					compare_commits = new JSONObject(sendRequest("https://api.github.com/repos/"+
+							proj.getUser()+"/"+proj.getRepo()+"/compare/"
+							+proj.getDetail_commits().getString("commitAt_t"+k)+"..."
+							+proj.getDetail_commits().getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
 					// Affichage requête
 					System.out.println("https://api.github.com/repos/"+
-							commit.getString("user")+
-							"/"+commit.getString("repo")+
-							"/compare/"+commit.getString("commitAt_t"+k)+
-							"..."+commit.getString("commitAt_t"+(k+1))+"");
-					informations = commitInformation.getJSONArray("commits");
-					
-//					for (int l = 0; l < informations.length(); l++) {
-//						//TODO TEXT MINING SUR COMMENTAIRES
-//						
-//						System.out.println(informations.getJSONObject(l).getJSONObject("commit").getString("message"));
-//					}
-					
-					informations = commitInformation.getJSONArray("files");
+							proj.getUser()+"/"+proj.getRepo()+"/compare/"
+							+proj.getDetail_commits().getString("commitAt_t"+k)+"..."
+							+proj.getDetail_commits().getString("commitAt_t"+(k+1))+"");
+
+					commit_infos = compare_commits.getJSONArray("commits");
+
+
+					// Sauvegarde des commentaires associés à chaque commit
+					for (int l = 0; l < commit_infos.length(); l++) {
+						proj.setComments(commit_infos.getJSONObject(l).getJSONObject("commit").getString("message"));
+					}
+
+					commit_infos = compare_commits.getJSONArray("files");
 					// Other loop because sometime, you have more than one commit between two given SHA
-					for (int l = 0; l < informations.length(); l++) {
-						scoreTemp += informations.getJSONObject(l).getInt("changes");
+					for (int l = 0; l < commit_infos.length(); l++) {
+						proj.setModified_lines(commit_infos.getJSONObject(l).getInt("changes"));
 					}
 				}
-				// divide scoreTemp by the project's size in order to have the percentage of modified lines
-				projectSize=0;
+
+				// divide Modified_lines by the project's size in order to have the percentage of modified lines
 				try{
-					projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
+					proj.setOctet_size(GetProjectSize(proj.getUser(),proj.getRepo()));
 				} catch (Exception e) {
 					// Une seconde fois car souvent la première plante ;)
-					projectSize = GetProjectSize(commit.getString("user"),commit.getString("repo"));
+					proj.setOctet_size(GetProjectSize(proj.getUser(),proj.getRepo()));
 				}
-				if(projectSize >0){
+				if(proj.getOctet_size() >0){
 					// In average, a line is 35 octets (it's the case for this document)
-					score += lineWeight*scoreTemp/projectSize;
+					proj.setScore(lineWeight*proj.getModified_lines()/proj.getOctet_size());
 				}
 			} catch (JSONException e) {
 				System.err.println(e.getMessage()+" ("+e+")");
@@ -579,12 +500,26 @@ public class Github extends Api{
 				System.err.println(e.getMessage());
 			}
 		}
-		// And divide the final score by the number of projects found in order to have the mean.
-		if(commits.length()>0){
-			score = score /commits.length();
-		}else{
-			score = 0;
+
+		// Intégration de l'analyse des commentaires associés aux commits
+		if (projects.size()>0) {
+			tMining = new TextMining();
+			for (GithubProject proj : projects) {
+				tMining.indexComments(proj.getComments(), proj.getUser(), proj.getRepo());
+			}
+			projects = tMining.analyseComments(projects);
+			// TODO : intégrer le score de TextMining au score total (+1 pour éviter les score*0,... ?)
 		}
-		return score;
+
+		// Calcul du score total de la méthode Github
+		// Division du score total par le nombre de projets trouvés
+		if(projects.size()>0){
+			for (GithubProject proj : projects) {
+				Github.getInstance().setScore(Github.getInstance().getScore() + proj.getScore());
+			}
+			Github.getInstance().setScore(Github.getInstance().getScore()/projects.size());
+		}
+
 	}
+
 }

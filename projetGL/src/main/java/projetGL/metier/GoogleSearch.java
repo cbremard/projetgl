@@ -103,11 +103,18 @@ public class GoogleSearch extends MethodJunior{
 	}
 
 	
+	/**
+	 * @return le score de l'instance de la méthode GoogleSearch
+	 */
 	@Override
 	public float getScore() {
 		return GoogleSearch.getInstance().score;
 	}
 
+	/**
+	 * Pour modifier la valeur du score de l'instance de GoogleSearch
+	 * @param _score
+	 */
 	public void setScore(float _score){
 		GoogleSearch.getInstance().score = _score;
 	}
@@ -121,29 +128,27 @@ public class GoogleSearch extends MethodJunior{
 	 * @author fanny
 	 * @return result: le score généré par la méthode
 	 */
-	public float calcul_score() {
-		float result = 0;
+	public float calcul_score_gs() {
 		try {
-			result = state.compute(this);
+			state.compute(this);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			System.out.println("The score will have a value of 0.");
 		}
-		if(score>0){
+		if(GoogleSearch.getInstance().getScore()>0){
 			state = new StateSuccess();
 		}else{
 			state = new StateFailure();
 		}
-		return result;
+		return GoogleSearch.getInstance().getScore();
 	}
 	
 	/**
 	 * Exécute le calcul de score pour la méthode "GoogleSearch" si cette dernière est cochée par l'utilisateur
 	 * 
 	 * @author fanny
-	 * @return TODO
 	 */
-	public float compute() {
+	public void compute() {
 		state = new StateRunning();
 		float _score = 0;
 		float _scoreInit=0;
@@ -165,13 +170,11 @@ public class GoogleSearch extends MethodJunior{
 		} catch (IOException e){
 			System.err.println("Erreur au niveau de la requête Google : " + e);
 		}
-		// TODO calcul du score réel
+		// TODO calcul du score réel, en divisant par le nombre de pages trouvée en moyenne
 		_score = _scoreInit;
 		
 		GoogleSearch.getInstance().setScore(_score);
-		
-		// TODO Quoi à retourner ?
-		return 0;
+
 	}
 
 }

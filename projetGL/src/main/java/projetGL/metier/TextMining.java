@@ -2,8 +2,8 @@ package projetGL.metier;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
-import org.apache.commons.httpclient.HttpException;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -24,153 +24,197 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.Version;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import projetGL.controller.Controller;
-import projetGL.exceptions.InvalideMethodUrlException;
-import projetGL.exceptions.MaxRequestException;
 
 
 // TODO : mettre un coeff, en fonction de si les commentaires des commits parlent de la version ou non
 public class TextMining {
 
+	private Directory fsDirectory;
+	private Document doc;
+	private Analyzer standardAnalyzer;
+	private IndexDeletionPolicy deletionPolicy;
+	private IndexWriter indexWriter;
+	private boolean create;
+	private BooleanQuery query;
+	private IndexSearcher indexSearcher;
+	private TopDocs topDocs;
 
-	public static JSONArray init(){
-		JSONObject commitInformation  = new JSONObject();
-		JSONArray commits = new JSONArray();
-		Github G = Github.getInstance();
-
+	
+	/**
+	 * Constructeur de TextMining avec initialisation des attributs de Lucene (pour la recherche de commentaires pertinents)
+	 */
+	public TextMining() {
+		super();
 		try {
-			commitInformation = new JSONObject(G.sendRequest("https://api.github.com/repos/cbremard/projetGL/compare/c06de99d199947e130a5fc92f41c5385f912959a...120bdae5ed4e5e662e0e16639df867bf180c2d09").getResponseBodyAsString());
-			commits = commitInformation.getJSONArray("commits");
-			System.out.println(commits.toString());
-		} catch (HttpException e) {
-			System.err.println("Problème accès requête HTTP");
-			e.printStackTrace();
-		} catch (JSONException e) {
-			System.err.println("Erreur de JSON");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.err.println("Erreur IOexception");
-			e.printStackTrace();
-		} catch (InvalideMethodUrlException e) {
-			System.err.println("Méthode URL invalide");
-			e.printStackTrace();
-		} catch (MaxRequestException e) {
-			System.err.println("Nombre de requêtes maximal atteint");
-			e.printStackTrace();
-		}
-
-		//System.out.println(commitInformation.toString());
-
-		return commits;
-	}
-
-
-	public static void analyseComment(/*JSONArray commits*/){
-
-		// TODO A changer par le paramètre plus tard
-		JSONArray commits = init();
-
-		String message = "";
-		Document doc = new Document();
-		Directory fsDirectory = null;
-
-		try {
-			/* Création d'une instance d'analyseur, qui sera utilisée pour découper les données d'entrée */
-			Analyzer standardAnalyzer = new StandardAnalyzer(Version.LUCENE_30);
-			//Création d'un nouvel index
-			boolean create = true;
-			//Création d'une stratégie de suppression
-			IndexDeletionPolicy deletionPolicy = new KeepOnlyLastCommitDeletionPolicy(); 
-			IndexWriter indexWriter = null;
-
 			//Création de l'instance de Directory où les fichiers d'index seront stockés
 			fsDirectory =  FSDirectory.open(new File("src/resources/dir_lucene"));
+			/* Création d'une instance d'analyseur, qui sera utilisée pour découper les données d'entrée */
+			standardAnalyzer = new StandardAnalyzer(Version.LUCENE_30);
+			//Création d'un nouvel index
+			create = true;
+			//Création d'une stratégie de suppression
+			// TODO à voir s'il faut laisser comme ça
+			deletionPolicy = new KeepOnlyLastCommitDeletionPolicy(); 
+			indexWriter = null;
+			doc = new Document();
 
-			indexWriter = new IndexWriter(fsDirectory,standardAnalyzer,create,deletionPolicy, IndexWriter.MaxFieldLength.UNLIMITED);
-
-
-			// Parcours du tableau des commits
-			for (int l = 0; l < commits.length(); l++) {
-
-				try {
-					message = commits.getJSONObject(l).getJSONObject("commit").getString("message");
-					System.out.println(message);
-
-					// Ajout des champs à un Document Lucene
-					doc.add(new Field("message", message, Field.Store.YES, Field.Index.ANALYZED));
-
-				} catch (JSONException e) {
-					System.err.println("Erreur de parsage JSON");
-					e.printStackTrace();
-				}
+			try {
+				indexWriter = new IndexWriter(fsDirectory,standardAnalyzer,create,deletionPolicy, IndexWriter.MaxFieldLength.UNLIMITED);
+			} catch (CorruptIndexException e) {
+				System.err.println(e.getMessage());
+				e.printStackTrace();
+			} catch (LockObtainFailedException e) {
+				System.err.println(e.getMessage());
+				e.printStackTrace();
 			}
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+		}
+	}
 
-			// AJout des documents à l'indexWriter
+
+	/**
+	 * Création de la requête à utiliser pour chercher dans l'index
+	 */
+	public void queriesCreation(){
+
+		Query queryF;
+		query = new BooleanQuery();
+		queryF = new FuzzyQuery(new Term("comment", "version"));
+		/* QueryF: Recherche des commentaires contenant des mots similaires à 'version' dans le champ 'message'. */
+		query.add(queryF, Occur.SHOULD);
+		queryF = new FuzzyQuery(new Term("comment", "library"));
+		query.add(queryF, Occur.SHOULD);
+		queryF = new FuzzyQuery(new Term("comment", "librairie"));
+		query.add(queryF, Occur.SHOULD);
+		queryF = new FuzzyQuery(new Term("comment", "dependence"));
+		query.add(queryF, Occur.SHOULD);
+		queryF = new FuzzyQuery(new Term("comment", Controller.getArtefactId()));
+		query.add(queryF, Occur.SHOULD);
+		queryF = new FuzzyQuery(new Term("comment", Controller.getGroupId()));
+		query.add(queryF, Occur.SHOULD);
+		queryF = new FuzzyQuery(new Term("comment", Controller.getNewVersion()));
+		query.add(queryF, Occur.SHOULD);
+		queryF = new FuzzyQuery(new Term("comment", (String) Controller.getOldVersion()));
+		query.add(queryF, Occur.SHOULD);
+
+	}
+
+
+	/**
+	 * Ajoute les commentaires des commits (les champs) au document Lucene
+	 * @param comment : les commentaires associés aux commits analysés
+	 * @param user : le propriétaire du projet
+	 * @param repo : le nom du projet
+	 */
+	public void indexComments(String comment, String user, String repo){
+		// Ajout des champs à un Document Lucene
+		// TODO : nouveau document pour chaque projet ?
+		doc = new Document();
+		doc.add(new Field("comment", comment, Field.Store.YES, Field.Index.ANALYZED));
+		doc.add(new Field("user", user, Field.Store.NO, Field.Index.NOT_ANALYZED));
+		doc.add(new Field("repo", repo, Field.Store.NO, Field.Index.NOT_ANALYZED));
+		
+		try {
+			// Ajout des documents à l'index
 			indexWriter.addDocument(doc);
+		} catch (CorruptIndexException e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
 
+	
+	
+	/**
+	 * Analyse des commentaires des commits
+	 * @param projects : la liste des projets Github à scorer
+	 * @return la liste des projets Github mis à jour avec les scores calculés grâce au TextMining
+	 */
+	public 	ArrayList<GithubProject> analyseComments(ArrayList<GithubProject> projects){
+
+		ArrayList<GithubProject> list_resu = new ArrayList<GithubProject>();
+		
+		// Création de la requête
+		queriesCreation();
+
+		// TODO : à voir si l'analyse se fait sur des documents différents ou si c'est sur les champs
+		
+		try {
+			// Fermeture de l'écriture dans l'index
 			indexWriter.close();
-
-			/* Query1 : Recherche des commentaires contenant des mots similaires
-				   à 'version' dans le champ 'message'. */
-			Query query1 = new FuzzyQuery(new Term("message", "version"));
-			Query query2 = new FuzzyQuery(new Term("message", "library"));
-			Query query3 = new FuzzyQuery(new Term("message", "librairie"));
-			Query query4 = new FuzzyQuery(new Term("message", "dependence"));
-			Query query5 = new FuzzyQuery(new Term("message", Controller.getArtefactId()));
-			Query query6 = new FuzzyQuery(new Term("message", Controller.getGroupId()));
-			Query query7 = new FuzzyQuery(new Term("message", Controller.getNewVersion()));
-			Query query8 = new FuzzyQuery(new Term("message", (String) Controller.getOldVersion()));
-
-			BooleanQuery query = new BooleanQuery();
-			query.add(query1, Occur.SHOULD);
-			query.add(query2, Occur.SHOULD);
-			query.add(query3, Occur.SHOULD);
-			query.add(query4, Occur.SHOULD);
-			query.add(query5, Occur.SHOULD);
-			query.add(query6, Occur.SHOULD);
-			query.add(query7, Occur.SHOULD);
-			query.add(query8, Occur.SHOULD);
-
-			IndexSearcher indexSearcher = new IndexSearcher(fsDirectory);
-
-
+			// Initialisation de la recherche dans l'index
+			indexSearcher = new IndexSearcher(fsDirectory);
 			
+			
+			// Recherche dans l'index grâce à la requête
 			/* Le premier paramètre est la requête à exécuter,
-				   le second est le nombre de résultats qui doivent être ramenés */
-			TopDocs topDocs = indexSearcher.search(query,10);	
+			   le second est le nombre de résultats qui doivent être ramenés */
+			topDocs = indexSearcher.search(query,projects.size());
 			System.out.println("Total hits "+topDocs.totalHits);
-
+			
+			
 			// Récupère le tableau de références vers les documents
 			ScoreDoc[] scoreDocArray = topDocs.scoreDocs;	
-			int i = 0;
+			
+			
+			GithubProject proj ;
+			int docId;
 			for(ScoreDoc scoredoc: scoreDocArray){
-				i++;
-				System.out.println("Score : " + scoredoc.score);
+				proj = new GithubProject();
+				proj.setScore_comments(scoredoc.score);
+				//System.out.println("Score : " + scoredoc.score);
 				// Retourne le document et affiche les détails
-				int docId = scoredoc.doc;
-			    Document d = indexSearcher.doc(docId);
-			    System.out.println((i) + ". " + d.getField("message").stringValue());
+				docId = scoredoc.doc;
+				Document d = indexSearcher.doc(docId);
+				proj.setUser(d.getField("user").stringValue());
+				proj.setRepo(d.getField("repo").stringValue());
+				list_resu.add(proj);
 			}
-
+			
 			indexSearcher.close();
-			// TODO à voir !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			//indexWriter.deleteAll();
 			
+			list_resu = recordScores(list_resu, projects);
 			
-		} catch (CorruptIndexException e1) {
-			System.err.println(e1.getMessage());
-			e1.printStackTrace();
-		} catch (LockObtainFailedException e1) {
-			System.err.println(e1.getMessage());
-			e1.printStackTrace();
-		} catch (IOException e1) {
-			System.err.println(e1.getMessage());
-			e1.printStackTrace();
+			// TODO : voir si ça fonctionne
+			indexWriter.deleteAll();
+			
+		} catch (CorruptIndexException e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace();
 		}
-		
+
+		return list_resu;
 	}
+
+	
+	/**
+	 * Méthode qui associe à chaque projet le score trouvé par la méthode de TextMining sur les commentaires
+	 * @param list_doc : la liste des scores associés aux projets pertinents pour la requête
+	 * @param projects : la liste des projets Github à scorer
+	 * @return la liste des projets mis à jour avec le score de TextMining sur les commentaires
+	 */
+	public ArrayList<GithubProject> recordScores(ArrayList<GithubProject> list_doc, ArrayList<GithubProject> projects){
+		
+		for (GithubProject doc : list_doc) {
+			for (GithubProject proj : projects) {
+				if ((proj.getUser() == doc.getUser()) && (proj.getRepo() == doc.getRepo())) {
+					proj.setScore_comments(doc.getScore_comments());
+					break;
+				}
+			}
+		}
+		return projects;
+	}
+
+
+
 }
