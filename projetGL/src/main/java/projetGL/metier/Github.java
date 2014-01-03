@@ -1,8 +1,6 @@
 package projetGL.metier;
 
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -74,8 +72,9 @@ public class Github extends Api{
 		try {
 			state.compute(this);
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
-			System.out.println("The score will have a value of 0.");
+			System.err.println(e.getMessage());
+			System.err.println("The score will have a value of 0.");
+			e.printStackTrace();
 		}
 		if(GoogleSearch.getInstance().getScore()>0){
 			state = new StateSuccess();
@@ -246,15 +245,12 @@ public class Github extends Api{
 		//		URLConnection connection = null;
 		JSONObject project;
 		try {
-			project = new JSONObject(sendRequest("https://api.github.com/repos/"+user+"/"+repo));
+			project = new JSONObject(sendRequest("https://api.github.com/repos/"+user+"/"+repo).getResponseBodyAsString());
+			System.out.println(project.toString());
 			try {
-				size = (Integer) project.get("size"); // TODO : À CORRIGER !!! ÇA FONCTIONNE PAS :-(
+				size = project.getInt("size"); // TODO : À CORRIGER !!! ÇA FONCTIONNE PAS :-(
 				System.out.println("Size : " + size);
 			} catch (NumberFormatException e) {
-				System.err.println(e.getMessage());
-				e.printStackTrace();
-			}
-			catch (JSONException e) {
 				System.err.println(e.getMessage());
 				e.printStackTrace();
 			}
@@ -262,6 +258,9 @@ public class Github extends Api{
 			System.err.println(e.getMessage());
 			e.printStackTrace();
 		} catch (MaxRequestException e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace();
+		}catch (JSONException e) {
 			System.err.println(e.getMessage());
 			e.printStackTrace();
 		}
@@ -541,7 +540,6 @@ public class Github extends Api{
 			}
 			Github.getInstance().setScore(Github.getInstance().getScore()/projects.size());
 		}
-
 	}
 
 }
