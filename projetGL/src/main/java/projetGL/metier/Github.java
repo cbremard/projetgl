@@ -174,7 +174,7 @@ public class Github extends Api{
 
 		// Si aucune des versions du projet ne contient la "OldVersion" de la librairie recherchée
 		if(!oldVersionFound){
-			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") don't use the old version.");
+			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") doesn't use the old version.");
 		}
 		return jsonsResult;
 	}
@@ -241,14 +241,12 @@ public class Github extends Api{
 	 */
 	protected int GetProjectSize(String user, String repo) throws IOException, HttpException{
 		int size=0;
-		//		URL url;
-		//		URLConnection connection = null;
 		JSONObject project;
 		try {
 			project = new JSONObject(sendRequest("https://api.github.com/repos/"+user+"/"+repo).getResponseBodyAsString());
 			System.out.println(project.toString());
 			try {
-				size = project.getInt("size"); // TODO : À CORRIGER !!! ÇA FONCTIONNE PAS :-(
+				size = project.getInt("size");
 				System.out.println("Size : " + size);
 			} catch (NumberFormatException e) {
 				System.err.println(e.getMessage());
@@ -265,22 +263,6 @@ public class Github extends Api{
 			e.printStackTrace();
 		}
 
-		//			try {
-		//			url = new URL("https://github.com/"+user+
-		//					"/"+repo+"/archive/master.zip");
-		//			connection = url.openConnection();
-		//			size = connection.getContentLength();
-		//			if (size < 0){
-		//				throw new HttpException("Impossible to determine projet size for "+user+"'s repository.");
-		//			}
-		//		} catch (IOException e) {
-		//			throw e;
-		//		}
-		//		finally{
-		//			if(connection != null){
-		//				connection.getInputStream().close();
-		//			}
-		//		}
 		return size;
 	}
 
@@ -300,9 +282,11 @@ public class Github extends Api{
 		String finalResult, UriNextPage, linkResponse, bodyResponse;
 		GetMethod gmethod;
 
+		int nb_pages=0;
 		finalResult = "[";
 		UriNextPage = request;
-		while(UriNextPage != null && UriNextPage.length()>0){
+		while(UriNextPage != null && UriNextPage.length()>0 && nb_pages<5){
+			nb_pages++;
 			gmethod = sendRequest(UriNextPage);
 			bodyResponse = gmethod.getResponseBodyAsString();
 			if(bodyResponse.length()>3){
@@ -382,10 +366,9 @@ public class Github extends Api{
 		JSONObject compare_commits  = new JSONObject();
 		int index;
 		Pair_String user_repo;
-		float lineWeight;
 		GoogleSearch gs = GoogleSearch.getInstance();
 
-		lineWeight = 5609931/2176; // TODO : what's this ?
+		
 		// TODO Change next line
 		request = "https://www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
@@ -400,7 +383,7 @@ public class Github extends Api{
 		endURL = "pom.xml";
 
 		/* II. Récupération des utilisateurs et répertoires via une recherche Google */
-		//		urls = gs.getUrlResult(request,endURL);
+				urls = gs.getUrlResult(request,endURL);
 		//		urls.add("/url?q=https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCgQFjAB&usg=AFQjCNHq7BRpDuU7pkkMpz7RvOziAEX08w");
 		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:c3D7xLADygcJ:https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCsQIDAB&usg=AFQjCNHLUJ5QLu95jT6aLpAjvxUlb6d2og");
 		//		urls.add("/url?q=https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CC0QFjAC&usg=AFQjCNHoZLLKtuutPbal6KX0OmmomYRapw");
@@ -429,8 +412,11 @@ public class Github extends Api{
 		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
 		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/cbremard/projetGL/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
 
+		
+		System.out.println("----------------------------------- URLs");
 		/* Récupération des couples user-repo */
 		for (String url : urls) {
+			System.out.println(url);
 			try {
 				user = getUser(url);
 				repo = getRepo(url,user);
@@ -440,7 +426,7 @@ public class Github extends Api{
 				System.err.println(e.getMessage());
 			}
 		}
-
+		System.out.println("------------------------------------ END URLs");
 
 		/* III. Suppression des couples user-repo en double */
 		Collections.sort(users_repos, new PairComparator());
@@ -456,7 +442,9 @@ public class Github extends Api{
 
 		/* IV. Récupération des commits */
 		// Boucle sur chaque couple user-repository
-		for (Pair_String pair_user_repo : users_repos) {
+		Pair_String pair_user_repo;
+		while(users_repos.size()>0 && projects.size()<100){
+			pair_user_repo = users_repos.remove(0);
 			try {
 				detail_commit = getCommit(pair_user_repo.getLeft(), pair_user_repo.getRight());
 				project = new GithubProject(pair_user_repo.getLeft(), pair_user_repo.getRight(), detail_commit);
@@ -464,6 +452,7 @@ public class Github extends Api{
 			} catch (OldVersionNotFoundException e) {
 				System.err.println(e.getMessage());
 			}
+			
 		}
 
 
@@ -498,17 +487,9 @@ public class Github extends Api{
 					}
 				}
 
-				// divide Modified_lines by the project's size in order to have the percentage of modified lines
-				try{
-					proj.setOctet_size(GetProjectSize(proj.getUser(),proj.getRepo()));
-				} catch (Exception e) {
-					// Une seconde fois car souvent la première plante ;)
-					proj.setOctet_size(GetProjectSize(proj.getUser(),proj.getRepo()));
-				}
-				if(proj.getOctet_size() >0){
-					// In average, a line is 35 octets (it's the case for this document)
-					proj.setScore(lineWeight*proj.getModified_lines()/proj.getOctet_size());
-				}
+				proj.setOctet_size(GetProjectSize(proj.getUser(),proj.getRepo()));
+				
+				
 			} catch (JSONException e) {
 				System.err.println(e.getMessage()+" ("+e+")");
 			} catch (HttpException e) {
@@ -534,11 +515,13 @@ public class Github extends Api{
 
 		// Calcul du score total de la méthode Github
 		// Division du score total par le nombre de projets trouvés
+		int sum_score_comments=0;
 		if(projects.size()>0){
 			for (GithubProject proj : projects) {
-				Github.getInstance().setScore(Github.getInstance().getScore() + proj.getScore());
+				sum_score_comments+=proj.getScore_comments();
+				Github.getInstance().setScore(Github.getInstance().getScore() + proj.getScorePond());
 			}
-			Github.getInstance().setScore(Github.getInstance().getScore()/projects.size());
+			Github.getInstance().setScore(Github.getInstance().getScore()/sum_score_comments);
 		}
 	}
 
