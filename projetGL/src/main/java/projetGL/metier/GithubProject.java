@@ -46,7 +46,6 @@ public class GithubProject {
 	
 	public float getScore() {
 		// divide Modified_lines by the project's size in order to have the percentage of modified lines
-		
 		if(octet_size >0){
 			return lineWeight*modified_lines/octet_size;
 		}

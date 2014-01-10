@@ -55,7 +55,6 @@ public class TextMining {
 			//Création d'un nouvel index
 			create = true;
 			//Création d'une stratégie de suppression
-			// TODO à voir s'il faut laisser comme ça
 			deletionPolicy = new KeepOnlyLastCommitDeletionPolicy(); 
 			indexWriter = null;
 			doc = new Document();
@@ -142,8 +141,6 @@ public class TextMining {
 		// Création de la requête
 		queriesCreation();
 
-		// TODO : à voir si l'analyse se fait sur des documents différents ou si c'est sur les champs
-
 		try {
 			// Fermeture de l'écriture dans l'index
 			indexWriter.close();
@@ -155,7 +152,7 @@ public class TextMining {
 			/* Le premier paramètre est la requête à exécuter,
 			   le second est le nombre de résultats qui doivent être ramenés */
 			topDocs = indexSearcher.search(query,projects.size());
-			System.out.println("Total hits "+topDocs.totalHits);
+			System.out.println("Nombre de projets pertinents vis à vis des commentaires : "+topDocs.totalHits);
 
 
 			// Récupère le tableau de références vers les documents
@@ -173,7 +170,7 @@ public class TextMining {
 				Document d = indexSearcher.doc(docId);
 				proj.setUser(d.getField("user").stringValue());
 				proj.setRepo(d.getField("repo").stringValue());
-				System.out.println("Score de  " + proj.getUser() + " : " + proj.getScore_comments());
+				//System.out.println("Score de  " + proj.getUser() + " : " + proj.getScore_comments());
 				list_resu.add(proj);
 			}
 
@@ -204,9 +201,9 @@ public class TextMining {
 		
 		for (GithubProject proj : projects) {
 			for (GithubProject doc : list_doc) {
-				if ((proj.getUser() == doc.getUser()) && (proj.getRepo() == doc.getRepo())) {
+				if ((proj.getUser().equalsIgnoreCase(doc.getUser())) && (proj.getRepo().equalsIgnoreCase(doc.getRepo()))) {
 					proj.setScore_comments(doc.getScore_comments());
-					projects.remove(doc);
+					list_doc.remove(doc);
 					break;
 				}
 			}

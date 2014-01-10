@@ -1,7 +1,6 @@
 package projetGL;
 
 import projetGL.controller.Controller;
-import projetGL.metier.TextMining;
 
 
 /**
@@ -15,6 +14,5 @@ public class Main {
 		c.init();
 		c.run();
 		
-//		TextMining.analyseComment();
 	}
 }

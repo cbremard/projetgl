@@ -76,12 +76,12 @@ public class Github extends Api{
 			System.err.println("The score will have a value of 0.");
 			e.printStackTrace();
 		}
-		if(GoogleSearch.getInstance().getScore()>0){
+		if(Github.getInstance().getScore()>0){
 			state = new StateSuccess();
 		}else{
 			state = new StateFailure();
 		}
-		return GoogleSearch.getInstance().getScore();
+		return Github.getInstance().getScore();
 	}
 
 	/**
@@ -244,10 +244,10 @@ public class Github extends Api{
 		JSONObject project;
 		try {
 			project = new JSONObject(sendRequest("https://api.github.com/repos/"+user+"/"+repo).getResponseBodyAsString());
-			System.out.println(project.toString());
+			//System.out.println(project.toString());
 			try {
 				size = project.getInt("size");
-				System.out.println("Size : " + size);
+				//System.out.println("Size : " + size);
 			} catch (NumberFormatException e) {
 				System.err.println(e.getMessage());
 				e.printStackTrace();
@@ -285,7 +285,7 @@ public class Github extends Api{
 		int nb_pages=0;
 		finalResult = "[";
 		UriNextPage = request;
-		while(UriNextPage != null && UriNextPage.length()>0 && nb_pages<5){
+		while(UriNextPage != null && UriNextPage.length()>0 && nb_pages<100){
 			nb_pages++;
 			gmethod = sendRequest(UriNextPage);
 			bodyResponse = gmethod.getResponseBodyAsString();
@@ -410,7 +410,7 @@ public class Github extends Api{
 		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:D2_mfqBYiqwJ:https://github.com/pthurotte/testDevCloud/blob/master/appSuiviExploit-webapp/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CEsQIDAHOBQ&usg=AFQjCNFnGuSOd9rgqxyNjG26RTlKMGlHUw");
 		//		urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CE0QFjAIOBQ&usg=AFQjCNFNDRAKdBX-GzMOiXiQ-l4Xc8rZkg");
 		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
-		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/cbremard/projetGL/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
+		//urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/cbremard/projetGL/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
 
 		
 		System.out.println("----------------------------------- URLs");
@@ -466,11 +466,6 @@ public class Github extends Api{
 							proj.getUser()+"/"+proj.getRepo()+"/compare/"
 							+proj.getDetail_commits().getString("commitAt_t"+k)+"..."
 							+proj.getDetail_commits().getString("commitAt_t"+(k+1))+"").getResponseBodyAsString());
-					// Affichage requête
-					System.out.println("https://api.github.com/repos/"+
-							proj.getUser()+"/"+proj.getRepo()+"/compare/"
-							+proj.getDetail_commits().getString("commitAt_t"+k)+"..."
-							+proj.getDetail_commits().getString("commitAt_t"+(k+1))+"");
 
 					commit_infos = compare_commits.getJSONArray("commits");
 
@@ -510,12 +505,11 @@ public class Github extends Api{
 				tMining.indexComments(proj.getComments(), proj.getUser(), proj.getRepo());
 			}
 			projects = tMining.analyseComments(projects);
-			// TODO : intégrer le score de TextMining au score total (+1 pour éviter les score*0,... ?)
 		}
 
 		// Calcul du score total de la méthode Github
 		// Division du score total par le nombre de projets trouvés
-		int sum_score_comments=0;
+		float sum_score_comments=0;
 		if(projects.size()>0){
 			for (GithubProject proj : projects) {
 				sum_score_comments+=proj.getScore_comments();
