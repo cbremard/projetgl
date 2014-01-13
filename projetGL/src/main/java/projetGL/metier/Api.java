@@ -7,7 +7,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.tools.ant.helper.ProjectHelper2.AntHandler;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
 import projetGL.exceptions.IdentificationFailledException;
@@ -59,7 +59,7 @@ public abstract class Api extends MethodJunior{
 	 * @throws MaxRequestException 
 	 * @throws IdentificationFailledException 
 	 */
-	protected GetMethod sendRequest(String request, boolean isFirst) throws InvalideMethodUrlException, HttpException, IOException, MaxRequestException{
+	protected GetMethod sendRequest(String request) throws InvalideMethodUrlException, HttpException, IOException, MaxRequestException{
 		int statusCode, maxRequestExpected, resquestCounterExpected;
 		HttpClient client = new HttpClient();
 		GetMethod gmethod;
@@ -93,12 +93,16 @@ public abstract class Api extends MethodJunior{
 //		}else{
 //			authentifiedRequest = request;
 //		}
-		if(isFirst){
-			authentifiedRequest = request+"?access_token="+accesTokens.get(accountIndex);
-			System.out.println("Dans isFirst= true " + authentifiedRequest);
+		if(isApiRequest){
+			if(StringUtils.containsIgnoreCase(request, "access_token=")){
+				authentifiedRequest = request;
+			}else{
+				authentifiedRequest = request+"?access_token="+accesTokens.get(accountIndex);
+			}
 			resquestCounter++;
 		}else{
 			authentifiedRequest = request;
+			System.out.println("Dans isFirst= false " + authentifiedRequest);
 		}
 		gmethod = new GetMethod(authentifiedRequest);
 		statusCode = client.executeMethod(gmethod);

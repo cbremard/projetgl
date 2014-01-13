@@ -1,11 +1,9 @@
 package projetGL.metier;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import org.apache.xerces.impl.dv.util.Base64;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
@@ -183,39 +181,44 @@ public class Github extends Api{
 		//			}
 		//		}
 
+System.out.println("Recherche de l'ancienne version dans les pom.xml");
 		for (int i = 0+1; i < jsonTemp1.length(); i++) {
 			try {
 
 				// Adresses à requêter pour trouver le pom.xml de la version cherchée
-				temporaryStr ="https://api.github.com/"
-						+ user+"/"
-						+ repository+"/"
-						+ "git/trees/"
-						+ jsonTemp1.getJSONObject(i).getString("sha");
-				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-				temporaryStr = jsonTemp2.getJSONObject("tree").getString("url");
-				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-				jsonTemp3 = jsonTemp2.getJSONArray("tree");
-
-
-				for (i=0; i<jsonTemp3.length(); i++) {
-					pom = jsonTemp3.getJSONObject(i).getString("path");
-					if (pom.equalsIgnoreCase("pom.xml")) {
-						temporaryStr = jsonTemp3.getJSONObject(i).getString("url");
-						break;
-					} else {
-						temporaryStr = null;
-					}
-				}
-				if (!temporaryStr.equals(null)) {
-					jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-					temporaryStr = jsonTemp2.getString("content");
-
-					byte[] decoded = Base64.decode(temporaryStr);
-					temporaryStr = new String(decoded, "UTF-8");
+//				temporaryStr ="https://api.github.com/"
+//						+ user+"/"
+//						+ repository+"/"
+//						+ "git/trees/"
+//						+ jsonTemp1.getJSONObject(i).getString("sha");
+				temporaryStr ="https://raw2.github.com/"
+										+ user+"/"
+										+ repository+"/"
+										+ jsonTemp1.getJSONObject(i).getString("sha")+"/"
+										+ repository+"/pom.xml";
+//				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
+//				temporaryStr = jsonTemp2.getJSONObject("tree").getString("url");
+//				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
+//				jsonTemp3 = jsonTemp2.getJSONArray("tree");
+//
+//
+//				for (i=0; i<jsonTemp3.length(); i++) {
+//					pom = jsonTemp3.getJSONObject(i).getString("path");
+//					if (pom.equalsIgnoreCase("pom.xml")) {
+//						temporaryStr = jsonTemp3.getJSONObject(i).getString("url");
+//						break;
+//					} else {
+//						temporaryStr = null;
+//					}
+//				}
+//				if (temporaryStr != null) {
+//					jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
+//					temporaryStr = jsonTemp2.getString("content");
+//
+//					byte[] decoded = Base64.decode(temporaryStr);
+//					temporaryStr = new String(decoded, "UTF-8");
+temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 					temporaryStr.replaceAll(" ", "");
-
-
 
 					if(StringUtils.containsIgnoreCase(temporaryStr, "<version>"+Controller.getOldVersion()+"</version>")
 							&& StringUtils.containsIgnoreCase(temporaryStr, "<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
@@ -237,7 +240,7 @@ public class Github extends Api{
 						jsonsResult = new JSONObject(temporaryStr);
 						break;
 					}
-				}
+//				}
 			} catch (JSONException e) {
 				e.printStackTrace();
 			} catch (Exception e) {
@@ -318,7 +321,7 @@ public class Github extends Api{
 		int size=0;
 		JSONObject project;
 		try {
-			project = new JSONObject(sendRequest("https://api.github.com/repos/"+user+"/"+repo, true).getResponseBodyAsString());
+			project = new JSONObject(sendRequest("https://api.github.com/repos/"+user+"/"+repo).getResponseBodyAsString());
 			//System.out.println(project.toString());
 			try {
 				size = project.getInt("size");
@@ -358,26 +361,17 @@ public class Github extends Api{
 		GetMethod gmethod;
 
 		System.out.println("-------------------- Dans sendMultipageRequest");
-		boolean isFirst = false;
-		int nb_pages=0;
 		finalResult = "[";
 		UriNextPage = request;
-		while(UriNextPage != null && UriNextPage.length()>0 /*&& nb_pages<100*/){
-			isFirst = false;
-			if (nb_pages==0) {
-				isFirst = true;
-			}
-			System.out.println("nb pages : " + nb_pages);
-			gmethod = sendRequest(UriNextPage,isFirst);
+		while(UriNextPage != null && UriNextPage.length()>0){
+			gmethod = sendRequest(UriNextPage);
 			System.out.println("UriNextPage premier : " + UriNextPage);
 			bodyResponse = gmethod.getResponseBodyAsString();
-			nb_pages++;
 			//System.out.println(bodyResponse);
 			if(bodyResponse.length()>3){
 				finalResult += bodyResponse.substring(1, bodyResponse.length()-1)+",";
 				linkResponse = gmethod.getResponseHeader("Link").getValue();
 				System.out.println("linkResponse : " + linkResponse);
-				// TODO : à tester
 				if (linkResponse.contains(">; rel=\"next\"")) {
 					UriNextPage = linkResponse.subSequence(linkResponse.indexOf("<")+1, linkResponse.indexOf(">; rel=\"next\"")).toString();
 				} else {
@@ -558,7 +552,7 @@ public class Github extends Api{
 					details_commit = new JSONObject(sendRequest("https://api.github.com/repos/"+
 							proj.getUser()+"/"+proj.getRepo()+"/commits/"
 							+ proj.getDetail_commits().getString("commitAt_t"+k)+""
-							, true).getResponseBodyAsString());
+							).getResponseBodyAsString());
 
 					// Sauvegarde des commentaires associés à chaque commit
 					proj.setComments(details_commit.getJSONObject("commit").getString("message"));
