@@ -7,6 +7,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.tools.ant.helper.ProjectHelper2.AntHandler;
 import org.json.JSONObject;
 
 import projetGL.exceptions.IdentificationFailledException;
@@ -14,12 +15,13 @@ import projetGL.exceptions.InvalideMethodUrlException;
 import projetGL.exceptions.MaxRequestException;
 import projetGL.exceptions.OldVersionNotFoundException;
 
+
 public abstract class Api extends MethodJunior{
 	protected int resquestCounter;
 	protected int maxRequest;
 	protected int accountIndex;
 	protected ArrayList<String> accesTokens;
-	
+
 	public Api() {
 		super();
 		accesTokens = new ArrayList<String>();
@@ -38,52 +40,62 @@ public abstract class Api extends MethodJunior{
 	public int getMaxRequest() {
 		return maxRequest;
 	}
-	
+
 	abstract protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException;
 	abstract protected boolean authentification(int accountIndex) throws IdentificationFailledException;
-	
+
 	/**
-	 * Gères les requêtes lancées sur les APIs de Github en 3 étapes.
-	 *    I. Gestion des authentifications afin obtenir un plus grand nombre de requête
-	 *    II. Exécution de la requête et incrémentation du compteur de requête
+	 * Gère les requêtes lancées sur les APIs de Github en 3 étapes.
+	 *    I. Gestion des authentifications afin obtenir un plus grand nombre de requêtes
+	 *    II. Exécution de la requête et incrémentation du compteur de requêtes
 	 *    III. Vérifications/synchronisation des compteurs de l'application avec les réponses de la requête
 	 * @author BREMARD Corentin
 	 * @param multiPages 
 	 * @param url: l'url à soumettre
-	 * @return le Json renvoyé par les API de Github si tout ce passe bien. Lève une exception sinon.
+	 * @return le Json renvoyé par les API de Github si tout se passe bien. Lève une exception sinon.
 	 * @throws InvalideMethodUrlException 
 	 * @throws IOException 
 	 * @throws HttpException 
 	 * @throws MaxRequestException 
 	 * @throws IdentificationFailledException 
 	 */
-	protected GetMethod sendRequest(String request) throws InvalideMethodUrlException, HttpException, IOException, MaxRequestException{
+	protected GetMethod sendRequest(String request, boolean isFirst) throws InvalideMethodUrlException, HttpException, IOException, MaxRequestException{
 		int statusCode, maxRequestExpected, resquestCounterExpected;
 		HttpClient client = new HttpClient();
 		GetMethod gmethod;
-		boolean authentifactionSuccessed, isApiRequest;
+		boolean authenticationSuccessed, isApiRequest;
 		String authentifiedRequest, refText;
-		/* I. Gestion des authentifications afin obtenir un plus grand nombre de requête */
-		authentifactionSuccessed = true;
+
+		/* I. Gestion des authentifications afin obtenir un plus grand nombre de requêtes */
+		authenticationSuccessed = true;
 		if((maxRequest-resquestCounter)<=0){
-			authentifactionSuccessed = false;
-			while(!authentifactionSuccessed && accountIndex<accesTokens.size()){
+			authenticationSuccessed = false;
+			while(!authenticationSuccessed && accountIndex<accesTokens.size()){
 				try {
-					authentifactionSuccessed = authentification(accountIndex);
+					authenticationSuccessed = authentification(accountIndex);
 				} catch (IdentificationFailledException e) {
 					System.err.println("Fail to connect at the account number "+accountIndex);
 				}
 				accountIndex++;
 			}
 		}
-		if(!authentifactionSuccessed){
+		if(!authenticationSuccessed){
 			throw new MaxRequestException("You reached the maximum of request on Github's API, or the authentification step failled");
 		}
-		/* II. Exécution de la requête et incrémentation du compteur de requête */
+		
+		
+		/* II. Exécution de la requête et incrémentation du compteur de requêtes */
 		refText = "https://api.github.com/";
 		isApiRequest = (request.substring(0,refText.length()).equals(refText));
-		if(isApiRequest){
+//		if(isApiRequest){
+//			authentifiedRequest = request+"?access_token="+accesTokens.get(accountIndex);
+//			resquestCounter++;
+//		}else{
+//			authentifiedRequest = request;
+//		}
+		if(isFirst){
 			authentifiedRequest = request+"?access_token="+accesTokens.get(accountIndex);
+			System.out.println("Dans isFirst= true " + authentifiedRequest);
 			resquestCounter++;
 		}else{
 			authentifiedRequest = request;
@@ -93,6 +105,8 @@ public abstract class Api extends MethodJunior{
 		if (statusCode != HttpStatus.SC_OK) {
 			throw new InvalideMethodUrlException(gmethod.getStatusText());
 		}
+		
+		
 		/*III. Vérifications/synchronisation des compteurs de l'application avec les réponses de la requête */
 		if(isApiRequest){
 			maxRequestExpected = Integer.parseInt(gmethod.getResponseHeader("X-RateLimit-Limit").getValue());

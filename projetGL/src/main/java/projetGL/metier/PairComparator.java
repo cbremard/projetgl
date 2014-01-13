@@ -8,7 +8,7 @@ public class PairComparator implements Comparator<Pair_String>{
 	public int compare(Pair_String pair1, Pair_String pair2) {
 		int result;
 		result = pair1.getLeft().compareTo(pair2.getLeft());
-		if( result == 0 ){
+		if(result == 0 ){
 			result = pair1.getRight().compareTo(pair2.getRight());
 		}
 		return result;

@@ -9,8 +9,9 @@ import junit.framework.TestCase;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.junit.Test;
 
-/* Au moins une méthde de test dans chaque classe de test
+/* Au moins une méthode de test dans chaque classe de test
 L'assertion: le résultat de l'expression booléenne indique un succès ou une erreur
 Dans paramètres assert : valeur attendue toujours avant valeur courante
 On peut aussi tester le renvoi d'exception (sans mettre l'assert et en exécutant la méthode à tester)
@@ -22,12 +23,19 @@ Méthode TearDown() : pas obligatoire, mais permet de libérer une connexion à 
 Méthode de test : ne renvoie aucun résultat, n'a pas de paramètre, est public
 
  */
+/**
+ * Classe de tests
+ * Seule la méthode getNbResult peut être testée car les autres impliquent des requêtes Google et donc des résultats évolutifs
+ * @author fanny
+ *
+ */
 public class GoogleSearchTest extends TestCase{
 	
 	/**
 	 * Test de getNbResult : 
 	 * 	- Est ce que le nombre de résultats renvoyés par la requête google est le bon ?
 	 */
+	@Test
 	public void testgetNbResult() {
 		GoogleSearch gs = GoogleSearch.getInstance();
 		Document doc;
@@ -44,13 +52,7 @@ public class GoogleSearchTest extends TestCase{
 	}
 
 
-	/* TODO : Est ce qu'il faut la tester ?
-	 * Sachant que même le test va se connecter à internet pour lancer la requête
-	public void testgetUrlResult() {
-		GoogleSearch gs = GoogleSearch.getInstance();
-		
-	}
-	*/
+
 	// Méthode pour tester le renvoi d'exceptions
 	//	public void testSommer() throws Exception {
 	//		MaClasse2 mc = new MaClasse2(1,1);

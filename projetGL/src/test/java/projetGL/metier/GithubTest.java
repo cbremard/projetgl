@@ -1,6 +1,5 @@
 package projetGL.metier;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 import projetGL.exceptions.InvalideMethodUrlException;
 
@@ -18,8 +17,8 @@ public class GithubTest extends TestCase{
 		g1.setResquestCounter(1);
 		g2.setResquestCounter(2);
 		/** Then */
-		Assert.assertEquals(g1.getCoeff(),g2.getCoeff());
-		Assert.assertEquals(g1.getResquestCounter(),g2.getResquestCounter());
+		assertEquals(g1.getCoeff(),g2.getCoeff());
+		assertEquals(g1.getResquestCounter(),g2.getResquestCounter());
 	}
 
 	public void testGetUser1(){
@@ -31,9 +30,9 @@ public class GithubTest extends TestCase{
 		user = "barais";
 		/** Then */
 		try {
-			Assert.assertEquals(user, github.getUser(url));
+			assertEquals(user, github.getUser(url));
 		} catch (InvalideMethodUrlException e) {
-			Assert.assertTrue(false);
+			assertTrue(false);
 		}
 	}
 
@@ -45,9 +44,9 @@ public class GithubTest extends TestCase{
 		/** Then */
 		try {
 			github.getUser(falseUrl);
-			Assert.assertTrue(false);
+			assertTrue(false);
 		} catch (InvalideMethodUrlException e) {
-			Assert.assertTrue(true);
+			assertTrue(true);
 		}
 	}
 
@@ -59,9 +58,9 @@ public class GithubTest extends TestCase{
 		repo = "junit";
 		/** Then */
 		try {
-			Assert.assertEquals(repo, github.getRepo(url, "javagems"));
+			assertEquals(repo, github.getRepo(url, "javagems"));
 		} catch (InvalideMethodUrlException e) {
-			Assert.assertTrue(false);
+			assertTrue(false);
 		}
 	}
 
@@ -73,9 +72,9 @@ public class GithubTest extends TestCase{
 		/** Then */
 		try {
 			github.getRepo(falseUrl, "WhisperSystems");
-			Assert.assertTrue(false);
+			assertTrue(false);
 		} catch (InvalideMethodUrlException e) {
-			Assert.assertTrue(true);
+			assertTrue(true);
 		}
 	}
 

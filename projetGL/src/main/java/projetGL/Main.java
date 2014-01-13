@@ -2,7 +2,6 @@ package projetGL;
 
 import projetGL.controller.Controller;
 
-
 /**
  * 
  * @author fanny and Corentins
@@ -13,6 +12,8 @@ public class Main {
 		Controller c = new Controller();
 		c.init();
 		c.run();
+			
 		
+		 
 	}
 }

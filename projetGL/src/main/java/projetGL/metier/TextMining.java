@@ -27,8 +27,15 @@ import org.apache.lucene.util.Version;
 
 import projetGL.controller.Controller;
 
-
-// TODO : mettre un coeff, en fonction de si les commentaires des commits parlent de la version ou non
+/**
+ * Classe TextMining (utilisation de Lucene)
+ * Le but de cette classe est d'analyser les commentaires rédigés sur des commits,
+ * pour attribuer un score de pertinence à chaque projet : Est ce que les modifications
+ * réalisées dans ce commit sont relatives au changement de version ?
+ * Plus le commentaire va être relatif au changement de version, plus il sera pertinent pour le calcul du score
+ * @author fanny
+ *
+ */
 public class TextMining {
 
 	private Directory fsDirectory;
@@ -50,7 +57,7 @@ public class TextMining {
 		try {
 			//Création de l'instance de Directory où les fichiers d'index seront stockés
 			fsDirectory =  FSDirectory.open(new File("src/resources/dir_lucene"));
-			/* Création d'une instance d'analyseur, qui sera utilisée pour découper les données d'entrée */
+			// Création d'une instance d'analyseur, qui sera utilisée pour découper les données d'entrée 
 			standardAnalyzer = new StandardAnalyzer(Version.LUCENE_30);
 			//Création d'un nouvel index
 			create = true;
@@ -79,10 +86,11 @@ public class TextMining {
 	 */
 	public void queriesCreation(){
 
-		Query queryF;
 		query = new BooleanQuery();
+		
+		Query queryF;
 		queryF = new FuzzyQuery(new Term("comment", "version"));
-		/* QueryF: Recherche des commentaires contenant des mots similaires à 'version' dans le champ 'message'. */
+		// QueryF: Recherche des commentaires contenant des mots similaires à 'version' dans le champ 'comment'
 		query.add(queryF, Occur.SHOULD);
 		queryF = new FuzzyQuery(new Term("comment", "library"));
 		query.add(queryF, Occur.SHOULD);
@@ -134,7 +142,7 @@ public class TextMining {
 	 * @param projects : la liste des projets Github à scorer
 	 * @return la liste des projets Github mis à jour avec les scores calculés grâce au TextMining
 	 */
-	public 	ArrayList<GithubProject> analyseComments(ArrayList<GithubProject> projects){
+	public	ArrayList<GithubProject> analyseComments(ArrayList<GithubProject> projects){
 
 		ArrayList<GithubProject> list_resu = new ArrayList<GithubProject>();
 

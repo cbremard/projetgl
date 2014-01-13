@@ -14,6 +14,9 @@ import projetGL.controller.Controller;
 public class GoogleSearch extends MethodJunior{
 	private static GoogleSearch uniqueGoogle = null;
 	
+	/**
+	 * Super constructeur de la méthode GoogleSearch
+	 */
 	private GoogleSearch(){
 		super();
 	}
@@ -64,7 +67,7 @@ public class GoogleSearch extends MethodJunior{
 	 * contenant le mot clé donné en paramètre
 	 * @param request : requête Google
 	 * @param keyword : mot clé qui détermine quelles urls nous intéressent
-	 * @return
+	 * @return liste d'urls
 	 */
 	public ArrayList<String> getUrlResult(String request, String keyword){
 		ArrayList<String> urls = new ArrayList<String>();
@@ -95,10 +98,6 @@ public class GoogleSearch extends MethodJunior{
 		} catch (NullPointerException e){
 			System.err.println("Echec de la connexion");
 		}
-		/*System.out.println("urls");
-		for (String url : urls){
-			System.out.println(url);
-		}*/
 		return urls;
 	}
 
