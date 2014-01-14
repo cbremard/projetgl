@@ -271,6 +271,7 @@ public class Github extends Api{
 				+ "git/trees/"
 				+ sha;
 
+		// TODO Corentin doit faire :lancer une exeption si le pom.xml n'est pas trouvé
 		try {
 			response = sendRequest(requete).getResponseBodyAsString();
 			if (response.contains("\"pom.xml\"")) {
