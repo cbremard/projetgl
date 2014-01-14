@@ -1,5 +1,6 @@
 package projetGL.metier;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +21,102 @@ import projetGL.exceptions.MaxRequestException;
 import projetGL.exceptions.OldVersionNotFoundException;
 
 public class Github extends Api{
+	
+	
+	
+	public static void main( String[] args ) throws OldVersionNotFoundException, HttpException, IOException, InvalideMethodUrlException, MaxRequestException{
+		JSONObject jsonsResult = new JSONObject();
+		JSONObject jsonTemp2 = new JSONObject();
+		JSONArray jsonTemp3 = new JSONArray();
+		String temporaryStr = "", user, repository;
+		ArrayList<String> list_sha = new ArrayList<String>();
+		boolean haveBeforeParam, oldVersionFound = false;
+		JSONObject jobj;
+		String pom;
+		int compt_sha;
+		Github git = Github.getInstance();
+
+		user = "cbremard";
+		repository = "projetGL";
+
+		list_sha.add("b907274274ab4e5c0a71085917f59f34b2d790b7");
+//		list_sha.add("90f69b180f82d04250e76f23fb6105b35dd760c7");
+//		list_sha.add("f2527fce45447318cd11956fb54fbf9f7b09a795");
+//		list_sha.add("39dadc39421a7f7d718aec75b40feceeefecac89");
+//		list_sha.add("12214d76a22527fd1e54fefe30b1dd4c320a0b46");
+//		list_sha.add("cb17f4ad1bba9c5b3293bbb4f9ae7519047c4fbc");
+//		list_sha.add("bd273fddab0690a91be9d8b2dc960b770bacfe3d");
+//		list_sha.add("8614bbf60810405b354ca0b9073c04180af957eb");
+//		list_sha.add("642107ee6ccbc4135b6f4cbd7541ee63de1f9e0b");
+//		list_sha.add("c62ec5c963b07b45eecf914f68c7eaf45c0428ec");
+
+		/* I. Récupération de tous les évènements liés au répertoire donné */
+//		try {
+//			list_sha = git.sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/commits");
+//			System.out.println("-----------------------------------------------------------");
+//		} catch (Exception e) {
+//			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") : " + e.getMessage());
+//		}
+//		for (String string : list_sha) {
+//			System.out.println(string);
+//		}
+
+		/* II. Sélection des nbOfSavedCommit commits suivant le changement de version */
+		compt_sha = 0;
+		String adress_tree;
+		adress_tree = git.findPathPom(user, repository, list_sha.get(0));
+		
+
+
+		for (String sha : list_sha) {
+//			try {
+				compt_sha++;
+				temporaryStr ="https://raw2.github.com/"
+						+ user+"/"
+						+ repository+"/"
+						+ sha
+						+ adress_tree
+						+ "/pom.xml";
+
+				temporaryStr = git.sendRequest(temporaryStr).getResponseBodyAsString();
+				temporaryStr = temporaryStr.replaceAll("\\s","");
+				System.out.println(temporaryStr);
+//
+//				if(StringUtils.containsIgnoreCase(temporaryStr, "<version>"+Controller.getOldVersion()+"</version>")
+//						&& StringUtils.containsIgnoreCase(temporaryStr, "<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
+//						&& StringUtils.containsIgnoreCase(temporaryStr, "<groupId>" +Controller.getGroupId()+"</groupId>")
+//						){
+//					oldVersionFound = true;
+//					temporaryStr = "{\"user\":\""+user+"\"";
+//					temporaryStr += ",\"repo\":\""+repository+"\"";
+//					temporaryStr += ",\"commitOldVersion\":\""+sha+"\"";
+//					for (int j = 1; j <= nbOfAnalysedCommits; j++) {
+//						temporaryStr += ",\"commitAt_t"+j+"\":\"";
+//						if(compt_sha-j>=0){
+//							temporaryStr += list_sha.get(compt_sha-j);
+//						}
+//						temporaryStr += "\"";
+//					}
+//					temporaryStr += "}";
+//					jsonsResult = new JSONObject(temporaryStr);
+//					break;
+//				}
+//			} catch (JSONException e) {
+//				e.printStackTrace();
+//			} catch (Exception e) {
+//				System.err.print("Unexpected result with URL "+temporaryStr +" : ");
+//				System.err.println(e.getMessage());
+//			}
+//		}	
+//
+//
+//		// Si aucune des versions du projet ne contient la "OldVersion" de la librairie recherchée
+//		if(!oldVersionFound){
+//			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") doesn't use the old version.");
+		}
+	}
+	
+	
 	private static Github uniqueGithub = null;
 	private static final int nbOfAnalysedCommits = 3; // Nombre de commits à analyser pour trouver le nombre de lignes modifiées suite à un changement de version
 	private float coeff;
@@ -94,120 +191,48 @@ public class Github extends Api{
 	 * @author BREMARD Corentin
 	 * @return Un JSON vide si le project en question n'a pas effectuer le changement de version désiré. Sinon, la méthode retourne un Json avec les paramètres "user" (le propriétaire du projet), "repo" (le répertoire du projet), "commitAt_t-1" (numéro SHA du project juste avant le changement de version), "commitAt_t0" (numéro SHA du project lors du changement de version) et les "comitAt_ti" (les numéros SHA du project aux instants t+i suivant le changement dez version.
 	 * @throws OldVersionNotFoundException 
+	 * @throws NullPointerException
+	 * @throws FileNotFoundException 
 	 */
 	@Override
-	protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException, NullPointerException {
+	protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException, NullPointerException, FileNotFoundException {
 		JSONObject jsonsResult = new JSONObject();
-		//		JSONArray jsonTemp1 = new JSONArray(); // Tableau de Json
 		JSONObject jsonTemp2 = new JSONObject();
 		JSONArray jsonTemp3 = new JSONArray();
-		String temporaryStr = "";
+		String currentVersion, previousVersion, temporaryStr = "";
 		ArrayList<String> list_sha = null;
-		boolean haveBeforeParam, oldVersionFound = false;
+		boolean finBoucle, haveBeforeParam, oldVersionFound = false;
 		JSONObject jobj;
 		String pom;
+		int currentIndexSha, previousIndexSha;
 
 		/* I. Récupération de tous les évènements liés au répertoire donné */
 		try {
 			list_sha = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/commits");
-			//			temporaryStr = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/events");
-			//jsonTemp1 = new JSONArray(temporaryStr);
 			System.out.println("-----------------------------------------------------------");
-			//System.out.println(jsonTemp1.toString());
-			//		} catch (JSONException e) {
-			//			System.err.println("JSONArray parsing error : " + temporaryStr);
 		} catch (Exception e) {
 			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") : " + e.getMessage());
 		}
 
-
-		//The commit jsonTemp2.getJSONObject(i) is after the commit jsonTemp2.getJSONObject(i+1) 
-		//So jsonTemp2.getJSONObject(i).getString("before") == jsonTemp2.getJSONObject(i+1).getString("head") 
-
-		/* III. Sélection des nbOfSavedCommit commits suivant le changement de version */
-		//Start at 1 because the newer commit (index==0) have the new librarie
-		//		for (int i = 0+1; i < jsonTemp2.length(); i++) {
-		//			try {
-		//				// Adresse à requêter pour trouver le pom.xml de la version cherchée
-		//				temporaryStr ="https://raw.github.com/"
-		//						+ user+"/"
-		//						+ repository+"/"
-		//						+ jsonTemp2.getJSONObject(i).getString("head")+"/"
-		//						+ repository+"/pom.xml";
-		//				temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
-		//				temporaryStr.replaceAll(" ", "");
-		//				if(StringUtils.containsIgnoreCase(temporaryStr, "<version>"+Controller.getOldVersion()+"</version>")
-		//						&& StringUtils.containsIgnoreCase(temporaryStr, "<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
-		//						&& StringUtils.containsIgnoreCase(temporaryStr, "<groupId>" +Controller.getGroupId()+"</groupId>")
-		//						){
-		//					oldVersionFound = true;
-		//					temporaryStr = "{\"commitAt_t"+-1+"\":\""+jsonTemp2.getJSONObject(i).getString("before")+"\"";
-		//					temporaryStr += ",\"commitAt_t"+0+"\":\""+jsonTemp2.getJSONObject(i).getString("head")+"\"";
-		//					for (int j = 1; j < nbOfAnalysedCommits; j++) {
-		//						temporaryStr += ",\"commitAt_t"+j+"\":\"";
-		//						if(i-j>=0){
-		//							temporaryStr += jsonTemp2.getJSONObject(i-j).getString("head");
-		//						}
-		//						temporaryStr += "\"";
-		//					}
-		//					temporaryStr += ",\"user\":\""+user+"\"";
-		//					temporaryStr += ",\"repo\":\""+repository+"\"";
-		//					temporaryStr += "}";
-		//					jsonsResult = new JSONObject(temporaryStr);
-		//					break;
-		//				}
-		//			} catch (JSONException e) {
-		//				e.printStackTrace();
-		//			} catch (Exception e) {
-		//				System.err.print("Unexpected result with URL "+temporaryStr +" : ");
-		//				System.err.println(e.getMessage());
-		//			}
-		//		}
-
-
-
-		//		for (int i = 0+1; i < jsonTemp1.length(); i++) {
-		//			try {
-
-		// Adresses à requêter pour trouver le pom.xml de la version cherchée
-		//				temporaryStr ="https://api.github.com/repos/"
-		//						+ user+"/"
-		//						+ repository+"/"
-		//						+ "git/trees/"
-		//						+ jsonTemp1.getJSONObject(i).getString("sha");
-		//				
-		//				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-		//				temporaryStr = jsonTemp2.getJSONObject("tree").getString("url");
-		//				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-		//				jsonTemp3 = jsonTemp2.getJSONArray("tree");
-		//
-		//
-		//				for (i=0; i<jsonTemp3.length(); i++) {
-		//					pom = jsonTemp3.getJSONObject(i).getString("path");
-		//					if (pom.equalsIgnoreCase("pom.xml")) {
-		//						temporaryStr = jsonTemp3.getJSONObject(i).getString("url");
-		//						break;
-		//					} else {
-		//						temporaryStr = null;
-		//					}
-		//				}
-		//				if (temporaryStr != null) {
-		//					jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-		//					temporaryStr = jsonTemp2.getString("content");
-		//
-		//					byte[] decoded = Base64.decode(temporaryStr);
-		//					temporaryStr = new String(decoded, "UTF-8");
-
+		/* II. Sélection des nbOfSavedCommit commits suivant le changement de version */
 		System.out.println("Recherche de l'ancienne version dans les pom.xml");
-		// Adresses à requêter pour trouver le pom.xml de la version cherchée
-
-		//TODO à tester
-		int compt_sha = 0;
+//		indexSha = 0;
 		String adress_tree=findPathPom(user, repository, list_sha.get(0));
 		System.out.println("adress_tree"+  adress_tree);
+		
+		//TODO Corentin: penser à prendre en compte le cas où newVersion<oldVersion
+		finBoucle = false;
+		currentIndexSha = list_sha.size()-1;
+		previousIndexSha = 0;
+		previousVersion = Controller.getNewVersion();
+		while(!finBoucle){
+			currentVersion = getLibraryVersion(user, repository, list_sha.get(currentIndexSha), adress_tree);
+		}
+		
+		
 		for (String sha : list_sha) {
 			try {
-				compt_sha++;
+				currentIndexSha++;
 				temporaryStr ="https://raw2.github.com/"
 						+ user+"/"
 						+ repository+"/"
@@ -228,8 +253,8 @@ public class Github extends Api{
 					temporaryStr += ",\"commitOldVersion\":\""+sha+"\"";
 					for (int j = 1; j <= nbOfAnalysedCommits; j++) {
 						temporaryStr += ",\"commitAt_t"+j+"\":\"";
-						if(compt_sha-j>=0){
-							temporaryStr += list_sha.get(compt_sha-j);
+						if(currentIndexSha-j>=0){
+							temporaryStr += list_sha.get(currentIndexSha-j);
 						}
 						temporaryStr += "\"";
 					}
@@ -253,40 +278,18 @@ public class Github extends Api{
 		return jsonsResult;
 	}
 
-	/**
-	 * 
-	 * @param user
-	 * @param repo
-	 * @param sha
-	 * @return
-	 */
-	private String findPathPom(String user, String repo, String sha){
-		String requete;
-		String result="";
-		String response;
-		JSONArray jsontree;
-		requete ="https://api.github.com/repos/"
+	protected String getLibraryVersion(String user, String repository, String sha, String pathToPOM) {
+		String request, result="";
+		request = "https://raw2.github.com/"
 				+ user+"/"
-				+ repo+"/"
-				+ "git/trees/"
-				+ sha;
-
-		// TODO Corentin doit faire :lancer une exeption si le pom.xml n'est pas trouvé
+				+ repository+"/"
+				+ sha
+				+ pathToPOM
+				+ "/pom.xml";
 		try {
-			response = sendRequest(requete).getResponseBodyAsString();
-			if (response.contains("\"pom.xml\"")) {
-				result = "";
-			} else {
-				jsontree = (new JSONObject(response)).getJSONArray("tree");
-				for (int i = 0; i < jsontree.length(); i++) {
-					if(jsontree.getJSONObject(i).getString("path").equals(repo)){
-						result = "/" + repo;
-					}
-				}
-			}
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			result = sendRequest(request).getResponseBodyAsString();
+			result = result.replaceAll("\\s","");
+			//TODO Récupérer de version de la librairie
 		} catch (HttpException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -299,6 +302,54 @@ public class Github extends Api{
 		} catch (MaxRequestException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * 
+	 * @param user
+	 * @param repo
+	 * @param sha
+	 * @return
+	 * @throws FileNotFoundException 
+	 */
+	protected String findPathPom(String user, String repo, String sha) throws FileNotFoundException{
+		String requete, response, result="";
+		JSONArray jsontree;
+		boolean pomFound = false;
+		requete ="https://api.github.com/repos/"
+				+ user+"/"
+				+ repo+"/"
+				+ "git/trees/"
+				+ sha;
+		try {
+			response = sendRequest(requete).getResponseBodyAsString();
+			if (response.contains("\"pom.xml\"")) {
+				result = "";
+				pomFound = true;
+			} else {
+				jsontree = (new JSONObject(response)).getJSONArray("tree");
+				for (int i = 0; i < jsontree.length(); i++) {
+					if(jsontree.getJSONObject(i).getString("path").equals(repo)){
+						result = "/" + repo;
+						pomFound = true;
+					}
+				}
+			}
+		} catch (JSONException e) {
+			System.err.println("Erreur lors de la recherche du pom.xml dans "+user+"/"+repo+" : "+e);
+		} catch (HttpException e) {
+			System.err.println("Erreur lors de la recherche du pom.xml dans "+user+"/"+repo+" : "+e);
+		} catch (IOException e) {
+			System.err.println("Erreur lors de la recherche du pom.xml dans "+user+"/"+repo+" : "+e);
+		} catch (InvalideMethodUrlException e) {
+			System.err.println("Erreur lors de la recherche du pom.xml dans "+user+"/"+repo+" : "+e);
+		} catch (MaxRequestException e) {
+			System.err.println("Erreur lors de la recherche du pom.xml dans "+user+"/"+repo+" : "+e);
+		}
+		if(!pomFound){
+			throw new FileNotFoundException("pom.xml not found in "+user+"/"+repo);
 		}
 		return result;
 	}
@@ -540,7 +591,7 @@ public class Github extends Api{
 
 		// TODO Change next line
 		/* II. Récupération des utilisateurs et répertoires via une recherche Google */
-				urls = gs.getUrlResult(request,endURL);
+		urls = gs.getUrlResult(request,endURL);
 		//				urls.add("/url?q=https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCgQFjAB&usg=AFQjCNHq7BRpDuU7pkkMpz7RvOziAEX08w");
 		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:c3D7xLADygcJ:https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCsQIDAB&usg=AFQjCNHLUJ5QLu95jT6aLpAjvxUlb6d2og");
 		//				urls.add("/url?q=https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CC0QFjAC&usg=AFQjCNHoZLLKtuutPbal6KX0OmmomYRapw");
@@ -610,6 +661,8 @@ public class Github extends Api{
 			} catch (OldVersionNotFoundException e) {
 				System.err.println(e.getMessage());
 			} catch (NullPointerException e) {
+				System.err.println("NullPointerException : "+e.getMessage());
+			} catch (FileNotFoundException e) {
 				System.err.println(e.getMessage());
 			}
 		}

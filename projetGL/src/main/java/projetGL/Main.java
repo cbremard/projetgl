@@ -12,8 +12,5 @@ public class Main {
 		Controller c = new Controller();
 		c.init();
 		c.run();
-			
-		
-		 
 	}
 }

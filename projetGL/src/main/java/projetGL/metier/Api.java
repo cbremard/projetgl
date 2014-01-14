@@ -1,5 +1,6 @@
 package projetGL.metier;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -41,7 +42,7 @@ public abstract class Api extends MethodJunior{
 		return maxRequest;
 	}
 
-	abstract protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException;
+	abstract protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException, NullPointerException, FileNotFoundException;
 	abstract protected boolean authentification(int accountIndex) throws IdentificationFailledException;
 
 	/**
