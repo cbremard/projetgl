@@ -96,46 +96,29 @@ public class Github extends Api{
 	 * @throws OldVersionNotFoundException 
 	 */
 	@Override
-	protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException {
+	protected JSONObject getCommit(String user, String repository) throws OldVersionNotFoundException, NullPointerException {
 		JSONObject jsonsResult = new JSONObject();
-		JSONArray jsonTemp1 = new JSONArray(); // Tableau de Json
+		//		JSONArray jsonTemp1 = new JSONArray(); // Tableau de Json
 		JSONObject jsonTemp2 = new JSONObject();
 		JSONArray jsonTemp3 = new JSONArray();
 		String temporaryStr = "";
+		ArrayList<String> list_sha = null;
 		boolean haveBeforeParam, oldVersionFound = false;
 		JSONObject jobj;
 		String pom;
 
 		/* I. Récupération de tous les évènements liés au répertoire donné */
 		try {
-			temporaryStr = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/commits");
+			list_sha = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/commits");
 			//			temporaryStr = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/events");
-			jsonTemp1 = new JSONArray(temporaryStr);
+			//jsonTemp1 = new JSONArray(temporaryStr);
 			System.out.println("-----------------------------------------------------------");
-			System.out.println(jsonTemp1.toString());
-		} catch (JSONException e) {
-			System.err.println("JSONArray parsing error : " + temporaryStr);
+			//System.out.println(jsonTemp1.toString());
+			//		} catch (JSONException e) {
+			//			System.err.println("JSONArray parsing error : " + temporaryStr);
 		} catch (Exception e) {
 			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") : " + e.getMessage());
 		}
-
-		/* II. Sélection des commits uniquement */
-		//		for (int i = 0; i < jsonTemp1.length(); i++) {
-		//			haveBeforeParam = false;
-		//			try {
-		//				if(jsonTemp1.getJSONObject(i).getString("type").equals("PushEvent")){
-		//					temporaryStr = "{";
-		//					temporaryStr += "\"head\":\"" + jsonTemp1.getJSONObject(i).getJSONObject("payload").getString("head") +"\",";
-		//					temporaryStr += "\"before\":\"" + jsonTemp1.getJSONObject(i).getJSONObject("payload").getString("before") +"\"}";
-		//					haveBeforeParam = true;
-		//					jsonTemp2.put(new JSONObject(temporaryStr));
-		//				}
-		//			} catch (JSONException e) {
-		//				if(haveBeforeParam){
-		//					System.err.println("One error appened when trying to parse a String to JSON : "+e);
-		//				}
-		//			}
-		//		}
 
 
 		//The commit jsonTemp2.getJSONObject(i) is after the commit jsonTemp2.getJSONObject(i+1) 
@@ -181,80 +164,142 @@ public class Github extends Api{
 		//			}
 		//		}
 
-System.out.println("Recherche de l'ancienne version dans les pom.xml");
-		for (int i = 0+1; i < jsonTemp1.length(); i++) {
+
+
+		//		for (int i = 0+1; i < jsonTemp1.length(); i++) {
+		//			try {
+
+		// Adresses à requêter pour trouver le pom.xml de la version cherchée
+		//				temporaryStr ="https://api.github.com/repos/"
+		//						+ user+"/"
+		//						+ repository+"/"
+		//						+ "git/trees/"
+		//						+ jsonTemp1.getJSONObject(i).getString("sha");
+		//				
+		//				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
+		//				temporaryStr = jsonTemp2.getJSONObject("tree").getString("url");
+		//				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
+		//				jsonTemp3 = jsonTemp2.getJSONArray("tree");
+		//
+		//
+		//				for (i=0; i<jsonTemp3.length(); i++) {
+		//					pom = jsonTemp3.getJSONObject(i).getString("path");
+		//					if (pom.equalsIgnoreCase("pom.xml")) {
+		//						temporaryStr = jsonTemp3.getJSONObject(i).getString("url");
+		//						break;
+		//					} else {
+		//						temporaryStr = null;
+		//					}
+		//				}
+		//				if (temporaryStr != null) {
+		//					jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
+		//					temporaryStr = jsonTemp2.getString("content");
+		//
+		//					byte[] decoded = Base64.decode(temporaryStr);
+		//					temporaryStr = new String(decoded, "UTF-8");
+
+		System.out.println("Recherche de l'ancienne version dans les pom.xml");
+		// Adresses à requêter pour trouver le pom.xml de la version cherchée
+
+		//TODO à tester
+		int compt_sha = 0;
+		String adress_tree=findPathPom(user, repository, list_sha.get(0));
+		System.out.println("adress_tree"+  adress_tree);
+		for (String sha : list_sha) {
 			try {
-
-				// Adresses à requêter pour trouver le pom.xml de la version cherchée
-//				temporaryStr ="https://api.github.com/"
-//						+ user+"/"
-//						+ repository+"/"
-//						+ "git/trees/"
-//						+ jsonTemp1.getJSONObject(i).getString("sha");
+				compt_sha++;
 				temporaryStr ="https://raw2.github.com/"
-										+ user+"/"
-										+ repository+"/"
-										+ jsonTemp1.getJSONObject(i).getString("sha")+"/"
-										+ repository+"/pom.xml";
-//				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-//				temporaryStr = jsonTemp2.getJSONObject("tree").getString("url");
-//				jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-//				jsonTemp3 = jsonTemp2.getJSONArray("tree");
-//
-//
-//				for (i=0; i<jsonTemp3.length(); i++) {
-//					pom = jsonTemp3.getJSONObject(i).getString("path");
-//					if (pom.equalsIgnoreCase("pom.xml")) {
-//						temporaryStr = jsonTemp3.getJSONObject(i).getString("url");
-//						break;
-//					} else {
-//						temporaryStr = null;
-//					}
-//				}
-//				if (temporaryStr != null) {
-//					jsonTemp2 = new JSONObject(sendRequest(temporaryStr,true).getResponseBodyAsString());
-//					temporaryStr = jsonTemp2.getString("content");
-//
-//					byte[] decoded = Base64.decode(temporaryStr);
-//					temporaryStr = new String(decoded, "UTF-8");
-temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
-					temporaryStr.replaceAll(" ", "");
+						+ user+"/"
+						+ repository+"/"
+						+ sha;
 
-					if(StringUtils.containsIgnoreCase(temporaryStr, "<version>"+Controller.getOldVersion()+"</version>")
-							&& StringUtils.containsIgnoreCase(temporaryStr, "<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
-							&& StringUtils.containsIgnoreCase(temporaryStr, "<groupId>" +Controller.getGroupId()+"</groupId>")
-							){
-						oldVersionFound = true;
-						temporaryStr = "{\"user\":\""+user+"\"";
-						temporaryStr += ",\"repo\":\""+repository+"\"";
-						temporaryStr += ",\"commitOldVersion\":\""+jsonTemp1.getJSONObject(i).getString("sha")+"\"";
-						// TODO vérifier le <"="
-						for (int j = 1; j <= nbOfAnalysedCommits; j++) {
-							temporaryStr += ",\"commitAt_t"+j+"\":\"";
-							if(i-j>=0){
-								temporaryStr += jsonTemp1.getJSONObject(i-j).getString("sha");
-							}
-							temporaryStr += "\"";
+				temporaryStr += adress_tree + "/pom.xml";
+
+				temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
+				temporaryStr.replaceAll(" ", "");
+
+				if(StringUtils.containsIgnoreCase(temporaryStr, "<version>"+Controller.getOldVersion()+"</version>")
+						&& StringUtils.containsIgnoreCase(temporaryStr, "<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
+						&& StringUtils.containsIgnoreCase(temporaryStr, "<groupId>" +Controller.getGroupId()+"</groupId>")
+						){
+					oldVersionFound = true;
+					temporaryStr = "{\"user\":\""+user+"\"";
+					temporaryStr += ",\"repo\":\""+repository+"\"";
+					temporaryStr += ",\"commitOldVersion\":\""+sha+"\"";
+					for (int j = 1; j <= nbOfAnalysedCommits; j++) {
+						temporaryStr += ",\"commitAt_t"+j+"\":\"";
+						if(compt_sha-j>=0){
+							temporaryStr += list_sha.get(compt_sha-j);
 						}
-						temporaryStr += "}";
-						jsonsResult = new JSONObject(temporaryStr);
-						break;
+						temporaryStr += "\"";
 					}
-//				}
+					temporaryStr += "}";
+					jsonsResult = new JSONObject(temporaryStr);
+					break;
+				}
 			} catch (JSONException e) {
 				e.printStackTrace();
 			} catch (Exception e) {
 				System.err.print("Unexpected result with URL "+temporaryStr +" : ");
 				System.err.println(e.getMessage());
 			}
+		}	
 
-		}
 
 		// Si aucune des versions du projet ne contient la "OldVersion" de la librairie recherchée
 		if(!oldVersionFound){
 			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") doesn't use the old version.");
 		}
 		return jsonsResult;
+	}
+
+	/**
+	 * 
+	 * @param user
+	 * @param repo
+	 * @param sha
+	 * @return
+	 */
+	private String findPathPom(String user, String repo, String sha){
+		String requete;
+		String result="";
+		String response;
+		JSONArray jsontree;
+		requete ="https://api.github.com/repos/"
+				+ user+"/"
+				+ repo+"/"
+				+ "git/trees/"
+				+ sha;
+
+		try {
+			response = sendRequest(requete).getResponseBodyAsString();
+			if (response.contains("\"pom.xml\"")) {
+				result = "";
+			} else {
+				jsontree = (new JSONObject(response)).getJSONArray("tree");
+				for (int i = 0; i < jsontree.length(); i++) {
+					if(jsontree.getJSONObject(i).getString("path").equals(repo)){
+						result = "/" + repo;
+					}
+				}
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HttpException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalideMethodUrlException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (MaxRequestException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return result;
 	}
 
 	/**
@@ -356,33 +401,57 @@ temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 	 * @throws HttpException 
 	 * @return result : un JSONArray sous format string
 	 */
-	protected String sendMultiPagesRequest(String request) throws HttpException, InvalideMethodUrlException, IOException, MaxRequestException{
-		String finalResult, UriNextPage, linkResponse, bodyResponse;
+	protected ArrayList<String> sendMultiPagesRequest(String request) throws HttpException, InvalideMethodUrlException, IOException, MaxRequestException{
+		ArrayList<String> finalResult = new ArrayList<String>();
+		String UriNextPage, linkResponse;
 		GetMethod gmethod;
+		JSONArray jsonTemp;
 
 		System.out.println("-------------------- Dans sendMultipageRequest");
-		finalResult = "[";
 		UriNextPage = request;
 		while(UriNextPage != null && UriNextPage.length()>0){
 			gmethod = sendRequest(UriNextPage);
 			System.out.println("UriNextPage premier : " + UriNextPage);
-			bodyResponse = gmethod.getResponseBodyAsString();
-			//System.out.println(bodyResponse);
-			if(bodyResponse.length()>3){
-				finalResult += bodyResponse.substring(1, bodyResponse.length()-1)+",";
-				linkResponse = gmethod.getResponseHeader("Link").getValue();
-				System.out.println("linkResponse : " + linkResponse);
-				if (linkResponse.contains(">; rel=\"next\"")) {
-					UriNextPage = linkResponse.subSequence(linkResponse.indexOf("<")+1, linkResponse.indexOf(">; rel=\"next\"")).toString();
-				} else {
+			try {
+				jsonTemp = new JSONArray(gmethod.getResponseBodyAsString());
+				if(jsonTemp.length()>0){
+					for (int i = 0; i < jsonTemp.length(); i++) {
+						finalResult.add(jsonTemp.getJSONObject(i).getString("sha"));
+					}
+					linkResponse = gmethod.getResponseHeader("Link").getValue();
+					if (linkResponse.contains(">; rel=\"next\"")) {
+						UriNextPage = linkResponse.subSequence(linkResponse.indexOf("<")+1, linkResponse.indexOf(">; rel=\"next\"")).toString();
+					} else {
+						UriNextPage = "";
+					}
+					System.out.println("UriNextPage : " + UriNextPage);
+				}else{
 					UriNextPage = "";
 				}
-				System.out.println("UriNextPage : " + UriNextPage);
-			}else{
-				UriNextPage = "";
+			} catch (JSONException e) {
+				System.out.println(e.getMessage());
 			}
+
 		}
-		finalResult = finalResult.substring(0, finalResult.length()-1) + "]";
+		//		while(UriNextPage != null && UriNextPage.length()>0){
+		//			gmethod = sendRequest(UriNextPage);
+		//			System.out.println("UriNextPage premier : " + UriNextPage);
+		//			bodyResponse = gmethod.getResponseBodyAsString();
+		//			//System.out.println(bodyResponse);
+		//			if(bodyResponse.length()>3){
+		//				finalResult += bodyResponse.substring(1, bodyResponse.length()-1)+",";
+		//				linkResponse = gmethod.getResponseHeader("Link").getValue();
+		//				//System.out.println("linkResponse : " + linkResponse);
+		//				if (linkResponse.contains(">; rel=\"next\"")) {
+		//					UriNextPage = linkResponse.subSequence(linkResponse.indexOf("<")+1, linkResponse.indexOf(">; rel=\"next\"")).toString();
+		//				} else {
+		//					UriNextPage = "";
+		//				}
+		//				System.out.println("UriNextPage : " + UriNextPage);
+		//			}else{
+		//				UriNextPage = "";
+		//			}
+		//		}
 		System.out.println("-------------------- Fin sendMultipageRequest");
 
 		return finalResult;
@@ -470,33 +539,33 @@ temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 
 		// TODO Change next line
 		/* II. Récupération des utilisateurs et répertoires via une recherche Google */
-		//		urls = gs.getUrlResult(request,endURL);
-		//		urls.add("/url?q=https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCgQFjAB&usg=AFQjCNHq7BRpDuU7pkkMpz7RvOziAEX08w");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:c3D7xLADygcJ:https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCsQIDAB&usg=AFQjCNHLUJ5QLu95jT6aLpAjvxUlb6d2og");
-		//		urls.add("/url?q=https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CC0QFjAC&usg=AFQjCNHoZLLKtuutPbal6KX0OmmomYRapw");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:5ww8N8D1D70J:https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CDAQIDAC&usg=AFQjCNGz1yEMfNLwDRE9d2QubTP_b8KZIA");
-		//		urls.add("/url?q=https://github.com/aktos/projet/blob/master/projet/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CEgQFjAH&usg=AFQjCNGnM5q2CdPHq_fVxYnjnzqVOKMrVQ");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:sGYrjHJKYRMJ:https://github.com/aktos/projet/blob/master/projet/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CEsQIDAH&usg=AFQjCNERbBtY2d8DLD2dP1jW8Ad0DebFtA");
-		//		urls.add("/url?q=https://github.com/abois/mywebapp/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CE0QFjAI&usg=AFQjCNG36i9_EqydOK2MFujYNgUYt4AWHw");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:znwfzAr9m54J:https://github.com/abois/mywebapp/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CFAQIDAI&usg=AFQjCNGBwmSq6amYHhcK74f1vQvkpMNuYg");
-		//		urls.add("/url?q=https://github.com/divarvel/TA-Melog/blob/master/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CCMQFjAAOAo&usg=AFQjCNGUekbiGWAz3Bhwxyqc7tdNMkl_IA");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:ugN72Njg4MQJ:https://github.com/divarvel/TA-Melog/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CCYQIDAAOAo&usg=AFQjCNHtKmCY_ucXv7CmYR5pY6Imp3K1Iw");
-		//		urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet-15-webapp/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CC0QFjACOAo&usg=AFQjCNHrDPt4KhDzJuhonhxbRJO5U_8KeA");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:0AY_sfQOD80J:https://github.com/Pasquet/projet-15min/blob/master/projet-15-webapp/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CDAQIDACOAo&usg=AFQjCNEdjBVZRuKmTxSbN2nu9StvTHF3Ag");
-		//		urls.add("/url?q=https://github.com/trich/tiw5-2011-tp2/blob/master/projet/modele/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CEYQFjAHOAo&usg=AFQjCNF1O6vxYk-DcMKGbWUfBsBGVCclvQ");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:xl6BQbLFxDUJ:https://github.com/trich/tiw5-2011-tp2/blob/master/projet/modele/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CEkQIDAHOAo&usg=AFQjCNEM9MkLqryx2FyfdrV4WZz3mI8-7w");
-		//		urls.add("/url?q=https://github.com/sunye/AlmaGTD/blob/master/GTDClientKrom/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCMQFjAAOBQ&usg=AFQjCNE6_iokobDiiL84vHLkIcu-E4H18A");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:TGtHVX_GFuEJ:https://github.com/sunye/AlmaGTD/blob/master/GTDClientKrom/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCYQIDAAOBQ&usg=AFQjCNFh2jb13Fyiru4K4K92SWvAb_Mlrg");
-		//		urls.add("/url?q=https://github.com/sunye/AlmaGTD/blob/master/GTDWebClient/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCgQFjABOBQ&usg=AFQjCNFsF5k9N8SoNuJfWPSx0r1ygk_fTg");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:eKNE2-pnRXAJ:https://github.com/sunye/AlmaGTD/blob/master/GTDWebClient/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCsQIDABOBQ&usg=AFQjCNEP6HnVdEwd-LsaKNbS0gUI5Pkfdw");
-		//		urls.add("/url?q=https://github.com/trich/tiw5-2011-tp2/blob/master/projet/web-interface/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CC0QFjACOBQ&usg=AFQjCNE6iikCLQk5gMbtFSNDZxmo6pXRkQ");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:7OnQeUY7rgMJ:https://github.com/trich/tiw5-2011-tp2/blob/master/projet/web-interface/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDAQIDACOBQ&usg=AFQjCNE0zBKxtr2VEOGL57-Hhkru2ICcpA");
-		//		urls.add("/url?q=https://github.com/ChristelleLacan/QuizZer/blob/master/QuizZer/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDgQFjAEOBQ&usg=AFQjCNFijrGvKrNW-MV9ON9HZk6s78lGiQ");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:aJufrzJh028J:https://github.com/ChristelleLacan/QuizZer/blob/master/QuizZer/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDsQIDAEOBQ&usg=AFQjCNHI8LgYMZS4PNVBW5OfsCMZs_wzkQ");
-		//		urls.add("/url?q=https://github.com/pthurotte/testDevCloud/blob/master/appSuiviExploit-webapp/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CEgQFjAHOBQ&usg=AFQjCNEfNr0fhMxzCqMBN2H5yC-IAVU7xA");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:D2_mfqBYiqwJ:https://github.com/pthurotte/testDevCloud/blob/master/appSuiviExploit-webapp/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CEsQIDAHOBQ&usg=AFQjCNFnGuSOd9rgqxyNjG26RTlKMGlHUw");
-		//		urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CE0QFjAIOBQ&usg=AFQjCNFNDRAKdBX-GzMOiXiQ-l4Xc8rZkg");
-		//		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
+				urls = gs.getUrlResult(request,endURL);
+		//				urls.add("/url?q=https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCgQFjAB&usg=AFQjCNHq7BRpDuU7pkkMpz7RvOziAEX08w");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:c3D7xLADygcJ:https://github.com/excilys-blemale/projet-test-jenkins/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CCsQIDAB&usg=AFQjCNHLUJ5QLu95jT6aLpAjvxUlb6d2og");
+		//				urls.add("/url?q=https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CC0QFjAC&usg=AFQjCNHoZLLKtuutPbal6KX0OmmomYRapw");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:5ww8N8D1D70J:https://github.com/jbourcie/projet-musee/blob/master/aapweb/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CDAQIDAC&usg=AFQjCNGz1yEMfNLwDRE9d2QubTP_b8KZIA");
+		//				urls.add("/url?q=https://github.com/aktos/projet/blob/master/projet/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CEgQFjAH&usg=AFQjCNGnM5q2CdPHq_fVxYnjnzqVOKMrVQ");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:sGYrjHJKYRMJ:https://github.com/aktos/projet/blob/master/projet/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CEsQIDAH&usg=AFQjCNERbBtY2d8DLD2dP1jW8Ad0DebFtA");
+		//				urls.add("/url?q=https://github.com/abois/mywebapp/blob/master/pom.xml&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CE0QFjAI&usg=AFQjCNG36i9_EqydOK2MFujYNgUYt4AWHw");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:znwfzAr9m54J:https://github.com/abois/mywebapp/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=Sl-xUoLZKceV7Aa80IDQCA&ved=0CFAQIDAI&usg=AFQjCNGBwmSq6amYHhcK74f1vQvkpMNuYg");
+		//				urls.add("/url?q=https://github.com/divarvel/TA-Melog/blob/master/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CCMQFjAAOAo&usg=AFQjCNGUekbiGWAz3Bhwxyqc7tdNMkl_IA");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:ugN72Njg4MQJ:https://github.com/divarvel/TA-Melog/blob/master/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CCYQIDAAOAo&usg=AFQjCNHtKmCY_ucXv7CmYR5pY6Imp3K1Iw");
+		//				urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet-15-webapp/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CC0QFjACOAo&usg=AFQjCNHrDPt4KhDzJuhonhxbRJO5U_8KeA");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:0AY_sfQOD80J:https://github.com/Pasquet/projet-15min/blob/master/projet-15-webapp/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CDAQIDACOAo&usg=AFQjCNEdjBVZRuKmTxSbN2nu9StvTHF3Ag");
+		//				urls.add("/url?q=https://github.com/trich/tiw5-2011-tp2/blob/master/projet/modele/pom.xml&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CEYQFjAHOAo&usg=AFQjCNF1O6vxYk-DcMKGbWUfBsBGVCclvQ");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:xl6BQbLFxDUJ:https://github.com/trich/tiw5-2011-tp2/blob/master/projet/modele/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUqn_GMmL7Aa6j4GIAQ&ved=0CEkQIDAHOAo&usg=AFQjCNEM9MkLqryx2FyfdrV4WZz3mI8-7w");
+		//				urls.add("/url?q=https://github.com/sunye/AlmaGTD/blob/master/GTDClientKrom/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCMQFjAAOBQ&usg=AFQjCNE6_iokobDiiL84vHLkIcu-E4H18A");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:TGtHVX_GFuEJ:https://github.com/sunye/AlmaGTD/blob/master/GTDClientKrom/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCYQIDAAOBQ&usg=AFQjCNFh2jb13Fyiru4K4K92SWvAb_Mlrg");
+		//				urls.add("/url?q=https://github.com/sunye/AlmaGTD/blob/master/GTDWebClient/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCgQFjABOBQ&usg=AFQjCNFsF5k9N8SoNuJfWPSx0r1ygk_fTg");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:eKNE2-pnRXAJ:https://github.com/sunye/AlmaGTD/blob/master/GTDWebClient/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CCsQIDABOBQ&usg=AFQjCNEP6HnVdEwd-LsaKNbS0gUI5Pkfdw");
+		//				urls.add("/url?q=https://github.com/trich/tiw5-2011-tp2/blob/master/projet/web-interface/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CC0QFjACOBQ&usg=AFQjCNE6iikCLQk5gMbtFSNDZxmo6pXRkQ");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:7OnQeUY7rgMJ:https://github.com/trich/tiw5-2011-tp2/blob/master/projet/web-interface/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDAQIDACOBQ&usg=AFQjCNE0zBKxtr2VEOGL57-Hhkru2ICcpA");
+		//				urls.add("/url?q=https://github.com/ChristelleLacan/QuizZer/blob/master/QuizZer/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDgQFjAEOBQ&usg=AFQjCNFijrGvKrNW-MV9ON9HZk6s78lGiQ");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:aJufrzJh028J:https://github.com/ChristelleLacan/QuizZer/blob/master/QuizZer/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CDsQIDAEOBQ&usg=AFQjCNHI8LgYMZS4PNVBW5OfsCMZs_wzkQ");
+		//				urls.add("/url?q=https://github.com/pthurotte/testDevCloud/blob/master/appSuiviExploit-webapp/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CEgQFjAHOBQ&usg=AFQjCNEfNr0fhMxzCqMBN2H5yC-IAVU7xA");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:D2_mfqBYiqwJ:https://github.com/pthurotte/testDevCloud/blob/master/appSuiviExploit-webapp/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CEsQIDAHOBQ&usg=AFQjCNFnGuSOd9rgqxyNjG26RTlKMGlHUw");
+		//				urls.add("/url?q=https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CE0QFjAIOBQ&usg=AFQjCNFNDRAKdBX-GzMOiXiQ-l4Xc8rZkg");
+		//				urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/Pasquet/projet-15min/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
 		urls.add("/url?q=https://webcache.googleusercontent.com/search%3Fclient%3Dubuntu%26channel%3Dfs%26q%3Dcache:qOoRxkVJQogJ:https://github.com/cbremard/projetGL/blob/master/projet15-functional-tests/pom.xml%252B%2522projet%2522%2B%25223.8.1%2522%2Bsite:github.com%26oe%3Dutf-8%26gws_rd%3Dcr%26hl%3Dfr%26ct%3Dclnk&sa=U&ei=S1-xUtedKLHT7Aa81YHwDg&ved=0CFAQIDAIOBQ&usg=AFQjCNH5vIOzRUGWCVdOwaI9rkVaInDnZA");
 
 
@@ -539,6 +608,8 @@ temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 				projects.add(project);
 			} catch (OldVersionNotFoundException e) {
 				System.err.println(e.getMessage());
+			} catch (NullPointerException e) {
+				System.err.println(e.getMessage());
 			}
 		}
 
@@ -551,7 +622,7 @@ temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
 				for (int k = 1; k <= nbOfAnalysedCommits; k++) {
 					details_commit = new JSONObject(sendRequest("https://api.github.com/repos/"+
 							proj.getUser()+"/"+proj.getRepo()+"/commits/"
-							+ proj.getDetail_commits().getString("commitAt_t"+k)+""
+							+ proj.getSha_commits().getString("commitAt_t"+k)+""
 							).getResponseBodyAsString());
 
 					// Sauvegarde des commentaires associés à chaque commit

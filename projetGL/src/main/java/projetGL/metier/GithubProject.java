@@ -92,10 +92,10 @@ public class GithubProject {
 		
 	}
 
-	public JSONObject getDetail_commits() {
+	public JSONObject getSha_commits() {
 		return sha_commits;
 	}
-	public void setDetail_commits(JSONObject detail_commits) {
+	public void setSha_commits(JSONObject detail_commits) {
 		this.sha_commits = detail_commits;
 	}
 

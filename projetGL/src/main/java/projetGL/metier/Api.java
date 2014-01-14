@@ -102,7 +102,6 @@ public abstract class Api extends MethodJunior{
 			resquestCounter++;
 		}else{
 			authentifiedRequest = request;
-			System.out.println("Dans isFirst= false " + authentifiedRequest);
 		}
 		gmethod = new GetMethod(authentifiedRequest);
 		statusCode = client.executeMethod(gmethod);
