@@ -48,25 +48,26 @@ public class Controller {
 
 	public static String getGroupId() {
 		// TODO Auto-generated method stub
-		return "junit";
+		return "org.nuxeo.ecm.platform";
 	}
+	
 	
 	public static String getArtefactId() {
 		// TODO Auto-generated method stub
-		return "junit";
+		return "nuxeo-services-parent";
 	}
 
 	public static String getNewVersion() {
 		// TODO Auto-generated method stub
 //		return "4.11";
-		return "3.8.1";
+		return "5.8-SNAPSHOT";
 	}
 
 
 	public static String getOldVersion() {
 		// TODO Auto-generated method stub
 //		return "3.8.2";
-		return "4.11";
+		return "5.4.1-SNAPSHOT";
 	}
 
 }
