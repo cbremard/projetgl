@@ -58,13 +58,15 @@ public class Controller {
 
 	public static String getNewVersion() {
 		// TODO Auto-generated method stub
-		return "4.11";
+//		return "4.11";
+		return "3.8.1";
 	}
 
 
-	public static CharSequence getOldVersion() {
+	public static String getOldVersion() {
 		// TODO Auto-generated method stub
-		return "3.8.2";
+//		return "3.8.2";
+		return "4.11";
 	}
 
 }

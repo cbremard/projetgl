@@ -21,102 +21,18 @@ import projetGL.exceptions.MaxRequestException;
 import projetGL.exceptions.OldVersionNotFoundException;
 
 public class Github extends Api{
-	
-	
-	
+
+
+
 	public static void main( String[] args ) throws OldVersionNotFoundException, HttpException, IOException, InvalideMethodUrlException, MaxRequestException{
-		JSONObject jsonsResult = new JSONObject();
-		JSONObject jsonTemp2 = new JSONObject();
-		JSONArray jsonTemp3 = new JSONArray();
-		String temporaryStr = "", user, repository;
-		ArrayList<String> list_sha = new ArrayList<String>();
-		boolean haveBeforeParam, oldVersionFound = false;
-		JSONObject jobj;
-		String pom;
-		int compt_sha;
 		Github git = Github.getInstance();
-
-		user = "cbremard";
-		repository = "projetGL";
-
-		list_sha.add("b907274274ab4e5c0a71085917f59f34b2d790b7");
-//		list_sha.add("90f69b180f82d04250e76f23fb6105b35dd760c7");
-//		list_sha.add("f2527fce45447318cd11956fb54fbf9f7b09a795");
-//		list_sha.add("39dadc39421a7f7d718aec75b40feceeefecac89");
-//		list_sha.add("12214d76a22527fd1e54fefe30b1dd4c320a0b46");
-//		list_sha.add("cb17f4ad1bba9c5b3293bbb4f9ae7519047c4fbc");
-//		list_sha.add("bd273fddab0690a91be9d8b2dc960b770bacfe3d");
-//		list_sha.add("8614bbf60810405b354ca0b9073c04180af957eb");
-//		list_sha.add("642107ee6ccbc4135b6f4cbd7541ee63de1f9e0b");
-//		list_sha.add("c62ec5c963b07b45eecf914f68c7eaf45c0428ec");
-
-		/* I. Récupération de tous les évènements liés au répertoire donné */
-//		try {
-//			list_sha = git.sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/commits");
-//			System.out.println("-----------------------------------------------------------");
-//		} catch (Exception e) {
-//			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") : " + e.getMessage());
-//		}
-//		for (String string : list_sha) {
-//			System.out.println(string);
-//		}
-
-		/* II. Sélection des nbOfSavedCommit commits suivant le changement de version */
-		compt_sha = 0;
-		String adress_tree;
-		adress_tree = git.findPathPom(user, repository, list_sha.get(0));
-		
-
-
-		for (String sha : list_sha) {
-//			try {
-				compt_sha++;
-				temporaryStr ="https://raw2.github.com/"
-						+ user+"/"
-						+ repository+"/"
-						+ sha
-						+ adress_tree
-						+ "/pom.xml";
-
-				temporaryStr = git.sendRequest(temporaryStr).getResponseBodyAsString();
-				temporaryStr = temporaryStr.replaceAll("\\s","");
-				System.out.println(temporaryStr);
-//
-//				if(StringUtils.containsIgnoreCase(temporaryStr, "<version>"+Controller.getOldVersion()+"</version>")
-//						&& StringUtils.containsIgnoreCase(temporaryStr, "<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
-//						&& StringUtils.containsIgnoreCase(temporaryStr, "<groupId>" +Controller.getGroupId()+"</groupId>")
-//						){
-//					oldVersionFound = true;
-//					temporaryStr = "{\"user\":\""+user+"\"";
-//					temporaryStr += ",\"repo\":\""+repository+"\"";
-//					temporaryStr += ",\"commitOldVersion\":\""+sha+"\"";
-//					for (int j = 1; j <= nbOfAnalysedCommits; j++) {
-//						temporaryStr += ",\"commitAt_t"+j+"\":\"";
-//						if(compt_sha-j>=0){
-//							temporaryStr += list_sha.get(compt_sha-j);
-//						}
-//						temporaryStr += "\"";
-//					}
-//					temporaryStr += "}";
-//					jsonsResult = new JSONObject(temporaryStr);
-//					break;
-//				}
-//			} catch (JSONException e) {
-//				e.printStackTrace();
-//			} catch (Exception e) {
-//				System.err.print("Unexpected result with URL "+temporaryStr +" : ");
-//				System.err.println(e.getMessage());
-//			}
-//		}	
-//
-//
-//		// Si aucune des versions du projet ne contient la "OldVersion" de la librairie recherchée
-//		if(!oldVersionFound){
-//			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") doesn't use the old version.");
-		}
+		git.getCommit("cbremard", "projetGL");
+//		System.out.println(git.compareTwoVersion("3.8.1", "4.11"));
+//		System.out.println(git.compareTwoVersion("4.11", "4.11"));
+//		System.out.println(git.compareTwoVersion("4.11", "3.8.1"));
 	}
-	
-	
+
+
 	private static Github uniqueGithub = null;
 	private static final int nbOfAnalysedCommits = 3; // Nombre de commits à analyser pour trouver le nombre de lignes modifiées suite à un changement de version
 	private float coeff;
@@ -201,109 +117,205 @@ public class Github extends Api{
 		JSONArray jsonTemp3 = new JSONArray();
 		String currentVersion, previousVersion, temporaryStr = "";
 		ArrayList<String> list_sha = null;
-		boolean finBoucle, haveBeforeParam, oldVersionFound = false;
+		boolean reverse, finBoucle, haveBeforeParam, oldVersionFound = false;
 		JSONObject jobj;
 		String pom;
-		int currentIndexSha, previousIndexSha;
+		int currentIndexSha, previousIndexSha, indexShaTemp;
 
 		/* I. Récupération de tous les évènements liés au répertoire donné */
+
 		try {
 			list_sha = sendMultiPagesRequest("https://api.github.com/repos/"+user+"/"+repository+"/commits");
-			System.out.println("-----------------------------------------------------------");
-		} catch (Exception e) {
-			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") : " + e.getMessage());
+		} catch (HttpException e) {
+			System.err.println("HttpException : "+e);
+		} catch (InvalideMethodUrlException e) {
+			System.err.println("Unexpected result with "+user+"'s repository ("+repository+") : "+e);
+		} catch (IOException e) {
+			System.err.println("IOException : "+e);
+		} catch (MaxRequestException e) {
+			System.err.println("MaxRequestException : "+e);
 		}
 
 		/* II. Sélection des nbOfSavedCommit commits suivant le changement de version */
 		System.out.println("Recherche de l'ancienne version dans les pom.xml");
-//		indexSha = 0;
+		//		indexSha = 0;
 		String adress_tree=findPathPom(user, repository, list_sha.get(0));
-		System.out.println("adress_tree"+  adress_tree);
-		
+
 		//TODO Corentin: penser à prendre en compte le cas où newVersion<oldVersion
 		finBoucle = false;
 		currentIndexSha = list_sha.size()-1;
 		previousIndexSha = 0;
 		previousVersion = Controller.getNewVersion();
+		reverse = compareTwoVersion(Controller.getOldVersion(), Controller.getNewVersion())<0;
 		while(!finBoucle){
-			currentVersion = getLibraryVersion(user, repository, list_sha.get(currentIndexSha), adress_tree);
-		}
-		
-		
-		for (String sha : list_sha) {
 			try {
-				currentIndexSha++;
-				temporaryStr ="https://raw2.github.com/"
-						+ user+"/"
-						+ repository+"/"
-						+ sha;
-
-				temporaryStr += adress_tree + "/pom.xml";
-
-				temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
-				temporaryStr.replaceAll(" ", "");
-
-				if(StringUtils.containsIgnoreCase(temporaryStr, "<version>"+Controller.getOldVersion()+"</version>")
-						&& StringUtils.containsIgnoreCase(temporaryStr, "<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
-						&& StringUtils.containsIgnoreCase(temporaryStr, "<groupId>" +Controller.getGroupId()+"</groupId>")
-						){
-					oldVersionFound = true;
-					temporaryStr = "{\"user\":\""+user+"\"";
-					temporaryStr += ",\"repo\":\""+repository+"\"";
-					temporaryStr += ",\"commitOldVersion\":\""+sha+"\"";
-					for (int j = 1; j <= nbOfAnalysedCommits; j++) {
-						temporaryStr += ",\"commitAt_t"+j+"\":\"";
-						if(currentIndexSha-j>=0){
-							temporaryStr += list_sha.get(currentIndexSha-j);
-						}
-						temporaryStr += "\"";
+System.out.println("Jump from "+ previousIndexSha+" to "+currentIndexSha+"(reverse = "+reverse+")");
+				currentVersion = getLibraryVersion(user, repository, list_sha.get(currentIndexSha), adress_tree);
+System.out.println("Version from "+previousVersion+" to "+currentVersion);
+				indexShaTemp = currentIndexSha;
+				if(compareTwoVersion(previousVersion,currentVersion)>0){
+					if(!reverse){
+						finBoucle=true;
+					}else{
+						currentIndexSha -= Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);
 					}
-					temporaryStr += "}";
-					jsonsResult = new JSONObject(temporaryStr);
-					break;
+				}else if (compareTwoVersion(previousVersion,currentVersion)<0){
+					if(!reverse){
+						currentIndexSha += Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);
+					}else{
+						finBoucle=true;
+					}
+				}else{
+					if(currentIndexSha>previousIndexSha){
+						currentIndexSha -= Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);
+					}else if(currentIndexSha<previousIndexSha){
+						currentIndexSha += Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);
+					}else{
+						finBoucle=true;
+					}
 				}
-			} catch (JSONException e) {
-				e.printStackTrace();
-			} catch (Exception e) {
-				System.err.print("Unexpected result with URL "+temporaryStr +" : ");
-				System.err.println(e.getMessage());
+				previousIndexSha = indexShaTemp;
+				previousVersion = currentVersion;
+			} catch (HttpException e) {
+				System.err.print("HttpException with URL "+temporaryStr +" : "+e.getMessage());
+				if(currentIndexSha>previousIndexSha){currentIndexSha -= Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);}
+				else if(currentIndexSha<previousIndexSha){currentIndexSha += Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);}
+				else{finBoucle=true;}
+			} catch (IOException e) {
+				System.err.println("IO with URL "+temporaryStr +" : "+e);
+				if(currentIndexSha>previousIndexSha){currentIndexSha -= Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);}
+				else if(currentIndexSha<previousIndexSha){currentIndexSha += Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);}
+				else{finBoucle=true;}
+			} catch (InvalideMethodUrlException e) {
+				System.err.println("UnexpectException with URL "+temporaryStr +" : "+e.getMessage());
+				if(currentIndexSha>previousIndexSha){currentIndexSha -= Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);}
+				else if(currentIndexSha<previousIndexSha){currentIndexSha += Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);}
+				else{finBoucle=true;}
+			} catch (MaxRequestException e) {
+				System.err.println(e);
+				if(currentIndexSha>previousIndexSha){currentIndexSha -= Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);}
+				else if(currentIndexSha<previousIndexSha){currentIndexSha += Math.ceil(Math.abs(currentIndexSha-previousIndexSha)/2);}
+				else{finBoucle=true;}
 			}
-		}	
-
-
-		// Si aucune des versions du projet ne contient la "OldVersion" de la librairie recherchée
-		if(!oldVersionFound){
-			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") doesn't use the old version.");
 		}
-		return jsonsResult;
+		return null;
+
+//		for (String sha : list_sha) {
+//			try {
+//				currentIndexSha++;
+//				temporaryStr ="https://raw2.github.com/"
+//						+ user+"/"
+//						+ repository+"/"
+//						+ sha;
+//
+//				temporaryStr += adress_tree + "/pom.xml";
+//
+//				temporaryStr = sendRequest(temporaryStr).getResponseBodyAsString();
+//				temporaryStr.replaceAll(" ", "");
+//
+//				if(StringUtils.containsIgnoreCase(temporaryStr, "<version>"+Controller.getOldVersion()+"</version>")
+//						&& StringUtils.containsIgnoreCase(temporaryStr, "<artifactId>"+Controller.getArtefactId()+"</artifactId>") 
+//						&& StringUtils.containsIgnoreCase(temporaryStr, "<groupId>" +Controller.getGroupId()+"</groupId>")
+//						){
+//					oldVersionFound = true;
+//					temporaryStr = "{\"user\":\""+user+"\"";
+//					temporaryStr += ",\"repo\":\""+repository+"\"";
+//					temporaryStr += ",\"commitOldVersion\":\""+sha+"\"";
+//					for (int j = 1; j <= nbOfAnalysedCommits; j++) {
+//						temporaryStr += ",\"commitAt_t"+j+"\":\"";
+//						if(currentIndexSha-j>=0){
+//							temporaryStr += list_sha.get(currentIndexSha-j);
+//						}
+//						temporaryStr += "\"";
+//					}
+//					temporaryStr += "}";
+//					jsonsResult = new JSONObject(temporaryStr);
+//					break;
+//				}
+//			} catch (JSONException e) {
+//				e.printStackTrace();
+//			} catch (Exception e) {
+//				System.err.print("Unexpected result with URL "+temporaryStr +" : ");
+//				System.err.println(e.getMessage());
+//			}
+//		}	
+//
+//
+//		// Si aucune des versions du projet ne contient la "OldVersion" de la librairie recherchée
+//		if(!oldVersionFound){
+//			throw new OldVersionNotFoundException(user+"'s repository ("+repository+") doesn't use the old version.");
+//		}
+//		return jsonsResult;
 	}
 
-	protected String getLibraryVersion(String user, String repository, String sha, String pathToPOM) {
-		String request, result="";
+	/**
+	 * Compare 2 version of a library
+	 * @param previousVersion
+	 * @param currentVersion
+	 * @return -1 if left version is the newer, 1 if it's the right version and 0 if it's the same version
+	 */
+	protected int compareTwoVersion(String previousVersion, String currentVersion) {
+		int result = 0;
+		String previousFiguresStr[], currentFiguresStr[];
+		try{
+			if(!previousVersion.equals(currentVersion)){
+			previousFiguresStr = previousVersion.split("\\.");
+			currentFiguresStr = currentVersion.split("\\.");
+			for(int i=0; i<Math.min(previousFiguresStr.length, currentFiguresStr.length);i++){
+				if(Integer.parseInt(previousFiguresStr[i])<Integer.parseInt(currentFiguresStr[i])){
+					result=1;
+					break;
+				}else if(Integer.parseInt(previousFiguresStr[i])>Integer.parseInt(currentFiguresStr[i])){
+					result=-1;
+					break;
+				}else if(i==(Math.min(previousFiguresStr.length, currentFiguresStr.length)-1)){
+					if(previousFiguresStr.length<currentFiguresStr.length){
+						result=1;
+						break;
+					}else if(previousFiguresStr.length>currentFiguresStr.length){
+						result=-1;
+						break;
+					}
+				}
+			}
+		}
+		}catch(NumberFormatException e){
+			System.err.println("Invalid version number");
+		}
+		return result;
+	}
+
+	/**
+	 * Recherche le numéro de la version utlisé pour un commit donné
+	 * @param user
+	 * @param repository
+	 * @param sha
+	 * @param pathToPOM
+	 * @return la version de la libraire utilisé
+	 * @throws HttpException
+	 * @throws IOException
+	 * @throws InvalideMethodUrlException
+	 * @throws MaxRequestException
+	 */
+	protected String getLibraryVersion(String user, String repository, String sha, String pathToPOM) throws HttpException, IOException, InvalideMethodUrlException, MaxRequestException {
+		String request, prefixe, resultVersion;
+		int start, end;
 		request = "https://raw2.github.com/"
 				+ user+"/"
 				+ repository+"/"
 				+ sha
 				+ pathToPOM
 				+ "/pom.xml";
-		try {
-			result = sendRequest(request).getResponseBodyAsString();
-			result = result.replaceAll("\\s","");
-			//TODO Récupérer de version de la librairie
-		} catch (HttpException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalideMethodUrlException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (MaxRequestException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
+
+		prefixe = "<groupId>"+Controller.getGroupId()+"</groupId>"
+				+"<artifactId>"+Controller.getArtefactId()+"</artifactId>"
+				+"<version>";
+			resultVersion = sendRequest(request).getResponseBodyAsString();
+			resultVersion = resultVersion.replaceAll("\\s","");
+			start = resultVersion.indexOf(prefixe) + prefixe.length();
+			end = start + resultVersion.substring(start).indexOf("</version>");
+			resultVersion = resultVersion.substring(start, end);
+		return resultVersion;
 	}
 
 	/**
