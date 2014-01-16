@@ -12,7 +12,7 @@ public class Controller {
 	/**
 	 * Initiation step
 	 */
-	public void initGithub(){
+	public void init(){
 		System.out.print("Initiation step");
 
 		System.out.print(".");System.out.print(".");

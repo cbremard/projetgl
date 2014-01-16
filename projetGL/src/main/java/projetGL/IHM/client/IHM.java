@@ -217,7 +217,7 @@ public class IHM implements EntryPoint {
 	
 	private float calculbis(ArrayList<String> input){
 		if(input.get(4)=="true"){
-			c.initGithub();
+			c.init();
 		}
 		return c.run();
 	}
