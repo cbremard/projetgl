@@ -16,10 +16,10 @@ public class GithubProject {
 	private JSONObject sha_commits;
 	private int modified_lines;
 	private int octet_size;
-	private static final float lineWeight = 20399/1844; //= Taille en Bits du projet (cf. GitHub) divisée par le nombre total de lignes au 09/01/213
+	private static final float lineWeight = 20399/1844; //= Taille en Bits du présent projet (cf. GitHub) divisée par le nombre total de lignes au 09/01/2013
 	
 	/**
-	 * Constructeur sans paramètres
+	 * Constructeur sans paramètre
 	 */
 	public GithubProject() {
 		super();
