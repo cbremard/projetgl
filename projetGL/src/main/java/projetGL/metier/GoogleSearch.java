@@ -39,10 +39,9 @@ public class GoogleSearch extends MethodJunior{
 	 * @return le nombre de résultats renvoyés pour une requête Google définie
 	 */
 	public int getNbResult(Document doc){
-		String text;
+		String text = "";
 		int NbResult=0;
 		text = doc.getElementById("resultStats").text(); // le document doit contenir un ID "resultStats"
-		//System.out.println(text);
 		
 		// Spliter la chaîne de caractères obtenue pour en extraire le nombre de résultats
 		String[] words;
@@ -79,7 +78,6 @@ public class GoogleSearch extends MethodJunior{
 			HttpsURLConnection.setDefaultHostnameVerifier(new NullHostnameVerifier());
 			doc = Jsoup.connect(request).userAgent("Firefox").get();
 			nbPages = (long) Math.ceil(0.1*getNbResult(doc)); // On récupère le nombre de résultats et on veut le nombre de pages (10 résultats par page)
-			System.out.println(nbPages + " pages");
 			nbPages = Math.min(100, nbPages); // On se limite à 100 pages (Google n'affiche rien après le 1000ième résultat)
 			for (long i = 0; i < nbPages; i++) {
 				if(i>0){
@@ -149,7 +147,6 @@ public class GoogleSearch extends MethodJunior{
 	 */
 	public void compute() {
 		state = new StateRunning();
-		float _score = 0;
 		float _scoreInit=0;
 		String request = "https://www.google.fr/search?client=ubuntu"
 				+ "&channel=fs"
@@ -170,9 +167,8 @@ public class GoogleSearch extends MethodJunior{
 			System.err.println("Erreur au niveau de la requête Google : " + e);
 		}
 		// TODO calcul du score réel, en divisant par le nombre de pages trouvée en moyenne
-		_score = _scoreInit;
 		
-		GoogleSearch.getInstance().setScore(_score);
+		GoogleSearch.getInstance().setScore(_scoreInit );
 
 	}
 

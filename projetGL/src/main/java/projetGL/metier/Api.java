@@ -51,14 +51,12 @@ public abstract class Api extends MethodJunior{
 	 *    II. Exécution de la requête et incrémentation du compteur de requêtes
 	 *    III. Vérifications/synchronisation des compteurs de l'application avec les réponses de la requête
 	 * @author BREMARD Corentin
-	 * @param multiPages 
 	 * @param url: l'url à soumettre
-	 * @return le Json renvoyé par les API de Github si tout se passe bien. Lève une exception sinon.
+	 * @return la réponse à une requête (url) sous forme de GetMethod si tout se passe bien. Lève une exception sinon.
 	 * @throws InvalideMethodUrlException 
 	 * @throws IOException 
 	 * @throws HttpException 
 	 * @throws MaxRequestException 
-	 * @throws IdentificationFailledException 
 	 */
 	protected GetMethod sendRequest(String request) throws InvalideMethodUrlException, HttpException, IOException, MaxRequestException{
 		int statusCode, maxRequestExpected, resquestCounterExpected;
@@ -88,12 +86,7 @@ public abstract class Api extends MethodJunior{
 		/* II. Exécution de la requête et incrémentation du compteur de requêtes */
 		refText = "https://api.github.com/";
 		isApiRequest = (request.substring(0,refText.length()).equals(refText));
-//		if(isApiRequest){
-//			authentifiedRequest = request+"?access_token="+accesTokens.get(accountIndex);
-//			resquestCounter++;
-//		}else{
-//			authentifiedRequest = request;
-//		}
+
 		if(isApiRequest){
 			if(StringUtils.containsIgnoreCase(request, "access_token=")){
 				authentifiedRequest = request;

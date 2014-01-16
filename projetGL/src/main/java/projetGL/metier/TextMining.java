@@ -173,12 +173,11 @@ public class TextMining {
 				proj = new GithubProject();
 				// Calcul de la pertinence des commentaires : on ajoute le "+1" pour ne pas avoir des projets à 0.
 				proj.setScore_comments(scoredoc.score + 1);
-				// Retourne le document et affiche les détails
+				// Retourne le document
 				docId = scoredoc.doc;
 				Document d = indexSearcher.doc(docId);
 				proj.setUser(d.getField("user").stringValue());
 				proj.setRepo(d.getField("repo").stringValue());
-				//System.out.println("Score de  " + proj.getUser() + " : " + proj.getScore_comments());
 				list_resu.add(proj);
 			}
 

@@ -8,6 +8,9 @@ import org.junit.Test;
 
 public class TextMiningTest {
 
+	/**
+	 * Test pour l'analyse des commentaires de TextMining qui retourne un score
+	 */
 	@Test
 	public void testAnalyseComments() {
 		TextMining tm = new TextMining();
