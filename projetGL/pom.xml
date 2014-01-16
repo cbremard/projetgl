@@ -196,5 +196,16 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+		<resources>
+		    <resource>
+		        <directory>${basedir}/src/main/java</directory>
+		        <includes>
+		            <include>**/Controller.java</include>
+		            <include>**/Method.java</include>
+		            <include>**/Github.java</include>
+		            <include>**/*.gwt.xml</include>
+		        </includes>
+		    </resource>
+		</resources>
 	</build>
 </project>
