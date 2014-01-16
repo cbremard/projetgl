@@ -2,6 +2,8 @@ package projetGL.IHM.client;
 
 import java.util.ArrayList;
 
+import projetGL.controller.Controller;
+
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -38,6 +40,8 @@ public class IHM implements EntryPoint {
 	private Button closeButton = new Button("Fermer");
 	private Label groupLabel = new Label();
 	private HTML serverResponseLabel = new HTML();
+	
+	private Controller c = new Controller();
 	
 
 	/**
@@ -203,12 +207,19 @@ public class IHM implements EntryPoint {
 						dialogBox.setText("Résultat du calcul");
 						serverResponseLabel
 								.removeStyleName("serverResponseLabelError");
-						serverResponseLabel.setHTML(result.get(0));
+						serverResponseLabel.setHTML("Le score calculé est : "+calculbis(result));
 						dialogBox.center();
 						closeButton.setFocus(true);
 					}
 				});
 		
+	}
+	
+	private float calculbis(ArrayList<String> input){
+		if(input.get(4)=="true"){
+			c.initGithub();
+		}
+		return c.run();
 	}
 
 	

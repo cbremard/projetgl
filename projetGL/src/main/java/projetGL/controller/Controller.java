@@ -12,7 +12,7 @@ public class Controller {
 	/**
 	 * Initiation step
 	 */
-	public void init(){
+	public void initGithub(){
 		System.out.print("Initiation step");
 
 		System.out.print(".");System.out.print(".");
@@ -29,10 +29,11 @@ public class Controller {
 	 * Lance l'application
 	 * @param list_method
 	 */
-	public void run(){
+	public float run(){
 		float globalScore = 0;
-		// Si github est cochée dans l'IHM
-		list_method.get(0).prepare();
+		for (Method method : list_method) {
+			method.prepare();
+		}
 
 		System.out.println("Scores computation in Controller");
 		for (Method method : list_method) {
@@ -41,7 +42,7 @@ public class Controller {
 			System.out.println(".");
 		}
 		System.out.println("done");
-		System.out.println("Final score = " + globalScore);
+		return globalScore;
 	}
 
 	
