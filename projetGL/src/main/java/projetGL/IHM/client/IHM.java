@@ -201,6 +201,7 @@ public class IHM implements EntryPoint {
 						serverResponseLabel.setHTML("SERVER_ERROR");
 						dialogBox.center();
 						closeButton.setFocus(true);
+						System.err.println(caught);
 					}
 
 					public void onSuccess(ArrayList<String> result) {
