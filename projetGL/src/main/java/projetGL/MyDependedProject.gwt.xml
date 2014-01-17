@@ -1,0 +1,7 @@
+<module>
+ <source path="">
+ <include name='**/Controller.java'/>
+ <include name='**/Method.java'/>
+ <include name='**/Github.java'/>
+ </source>
+</module>
